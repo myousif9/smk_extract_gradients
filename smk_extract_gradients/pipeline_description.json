@@ -1,0 +1,15 @@
+{
+    "Name": "smk_extract_gradients - Pipeline for extracting gradients from functional connectivity gradients",
+    "BIDSVersion": "1.4.0",
+    "DatasetType": "derivative",
+    "GeneratedBy": [
+        {
+            "Name": "smk_extract_gradients",
+            "Version": "0.1.0",
+            "CodeURL": "http://github.com/myousif9/smk_extract_gradients",
+            "Author": "Mohamed Yousif",
+            "AuthorEmail": "myousif9@uwo.ca"
+ 
+        }
+    ]
+}

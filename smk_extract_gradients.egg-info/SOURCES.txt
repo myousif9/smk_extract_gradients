@@ -1,0 +1,8 @@
+README.rst
+setup.py
+smk_extract_gradients.egg-info/PKG-INFO
+smk_extract_gradients.egg-info/SOURCES.txt
+smk_extract_gradients.egg-info/dependency_links.txt
+smk_extract_gradients.egg-info/entry_points.txt
+smk_extract_gradients.egg-info/requires.txt
+smk_extract_gradients.egg-info/top_level.txt

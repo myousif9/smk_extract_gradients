@@ -1,0 +1,3 @@
+[console_scripts]
+smk_extract_gradients = smk_extract_gradients.run:main
+
