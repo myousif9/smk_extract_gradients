@@ -24,8 +24,7 @@ targets_by_analysis_level:
 pybids_inputs:
   transforms:
       filters:
-        suffix: 'xfm'
-        extension: '.h5'
+        suffix: 'xfm.h5'
         datatype: 'anat'
         scope: 'derivatives'
       wildcards:
