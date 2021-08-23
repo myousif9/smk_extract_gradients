@@ -25,7 +25,7 @@ pybids_inputs:
   transforms:
       filters:
         suffix: 'xfm'
-        extensions: '.h5'
+        extension: '.h5'
         datatype: 'anat'
         scope: 'all'
       wildcards:
