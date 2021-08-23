@@ -27,13 +27,10 @@ pybids_inputs:
         suffix: 'xfm'
         extension: '.h5'
         datatype: 'anat'
-        scope: 'all'
+        scope: 'derivatives'
+        invalid_filters: 'allow'
       wildcards:
         - subject
-        - session
-        - acquisition
-        - task
-        - run
   
 #configuration for the command-line parameters to make available
 # passed on the argparse add_argument()
@@ -86,10 +83,10 @@ parse_args:
     help: Cleaned fmri data directory.
     required: True
 
-  --n_gradients:
-    help: Number of gradients to extract
-    default: 10
-    required: False 
+  --path_transforms:
+    help: Over
+
 
 #--- workflow specific configuration -- below is just an example:
 
+n_gradients: 10
