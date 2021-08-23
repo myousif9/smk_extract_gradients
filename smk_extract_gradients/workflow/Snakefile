@@ -28,6 +28,7 @@ wildcard_constraints:  **snakebids.get_wildcard_constraints(\
 #---- end snakebids boilerplate ------------------------------------------------
 
 
+print(config['input_path']['transforms'])
 
 rule all:
     input: 
