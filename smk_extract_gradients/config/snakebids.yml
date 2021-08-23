@@ -83,10 +83,6 @@ parse_args:
     help: Cleaned fmri data directory.
     required: True
 
-  --path_transforms:
-    help: Over
-
-
 #--- workflow specific configuration -- below is just an example:
 
 n_gradients: 10
