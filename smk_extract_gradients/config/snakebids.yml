@@ -21,7 +21,7 @@ targets_by_analysis_level:
 #   dictionary for each input is passed directly to pybids get()
 #    https://bids-standard.github.io/pybids/generated/bids.layout.BIDSLayout.html#bids.layout.BIDSLayout.get
 
-# pybids_inputs:
+pybids_inputs:
   # transforms:
   #     filters:
   #       suffix: 'xfm'
