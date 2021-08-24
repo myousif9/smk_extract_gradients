@@ -11,7 +11,7 @@ rule correct_nan_vertices:
 
 rule decompose_transform:
     input:
-        transform = expand(join(config['parse_args']['bids_dir'],'\derivatives\fmriprep\sub-{{subject}}\sub={{subject}}_from-{spaces2space}_mode-image_xfm.h5'),spaces2space=['MNI152NLin2009cAsym_to-T1w','T1w_to-MNI152NLin2009cAsym'])
+        transform = expand(join(config['bids_dir'],'\derivatives\fmriprep\sub-{{subject}}\sub={{subject}}_from-{spaces2space}_mode-image_xfm.h5'),spaces2space=['MNI152NLin2009cAsym_to-T1w','T1w_to-MNI152NLin2009cAsym'])
     params:
         transform_name_prefix = str(input.transform).replace('.h5',''),
         warp = '00_' +  params.transform_name_prefix + '_DisplacementFieldTransform.nii.gz',
