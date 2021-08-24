@@ -11,9 +11,9 @@ rule correct_nan_vertices:
 
 rule decompose_transform:
     input:
-        transform = if config['path_transforms_dir'] == 'path_transforms_dir'
+        transform = config['input_path']['transforms']
     params:
-        transform_name_prefix = config['input_path']['transforms'].replace('_mode-image_xfm.h5',''),
+        transform_name_prefix = config['input_path']['transforms'].replace('.h5',''),
         warp = '00_' +  params.transform_name_prefix + '_DisplacementFieldTransform.nii.gz',
         affine = '01_' + params.transform_name_prefix + '_AffineTransform.mat',
         transform_dir = 'deriv/post_fmriprep/sub-{subject}/MNINonLinear/',
@@ -73,8 +73,8 @@ rule decompose_transform:
 rule transform_hippunfold_Surface:
     input:
         surf = 'deriv/post_hippunfold/sub-{subject}/surf_T1w/sub-{subject}_hemi-{hemi}_space-T1w_den-{density}_desc-nancorrect_midthickness.surf.gii',
-        xfm_fwd = 'deriv/post_fmriprep/sub-{subject}/MNINonLinear/00_sub-{subject}_from-T1w_to-MNI152NLin6Asym_DisplacementFieldTransform.nii.gz'),
-        xfm_rev = 'deriv/post_fmriprep/sub-{subject}/MNINonLinear/00_sub-{subject}_from-MNI152NLin2009cAsym_to-T1w_DisplacementFieldTransform.nii.gz')
+        xfm_fwd = 'deriv/post_fmriprep/sub-{subject}/MNINonLinear/00_sub-{subject}_from-T1w_to-MNI152NLin6Asym_mode-image_xfm_DisplacementFieldTransform.nii.gz'),
+        xfm_rev = 'deriv/post_fmriprep/sub-{subject}/MNINonLinear/00_sub-{subject}_from-MNI152NLin2009cAsym_to-T1w_mode-image_xfm_DisplacementFieldTransform.nii.gz')
     output:
         surf = 'deriv/post_hippunfold/{subject}_V1_MR/surf_MNI/sub-{subject}_hemi-{hemi}_space-MNI_den-{density}_desc-nancorrect_midthickness.surf.gii'
     envmodules: 'connectome-workbench/1.4.1_20191117.simg'

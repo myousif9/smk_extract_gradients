@@ -26,6 +26,7 @@ pybids_inputs:
       filters:
         suffix: 'xfm'
         extension: '.h5'
+        datatype: 'anat'
         scope: 'derivatives'
         invalid_filters: 'allow'
       wildcards:
