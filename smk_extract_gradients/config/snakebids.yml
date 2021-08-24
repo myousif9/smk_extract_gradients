@@ -21,20 +21,20 @@ targets_by_analysis_level:
 #   dictionary for each input is passed directly to pybids get()
 #    https://bids-standard.github.io/pybids/generated/bids.layout.BIDSLayout.html#bids.layout.BIDSLayout.get
 
-pybids_inputs:
-  transforms:
-      filters:
-        suffix: 'xfm'
-        extension: '.h5'
-        datatype: 'anat'
-        scope: 'derivatives'
-        invalid_filters: 'allow'
-      wildcards:
-        - subject
-        - session
-        - acquisition
-        - task
-        - run
+# pybids_inputs:
+  # transforms:
+  #     filters:
+  #       suffix: 'xfm'
+  #       extension: '.h5'
+  #       datatype: 'anat'
+  #       scope: 'derivatives'
+  #       invalid_filters: 'allow'
+  #     wildcards:
+  #       - subject
+  #       - session
+  #       - acquisition
+  #       - task
+  #       - run
   
 #configuration for the command-line parameters to make available
 # passed on the argparse add_argument()
@@ -87,8 +87,8 @@ parse_args:
     help: Cleaned fmri data directory.
     required: True
 
-  --path_transforms_dir:
-    help: Path override for transform files.
+  --fmriprep_dir:
+    help: Path override for fmriprep direcotry.
     required: False
 
 
