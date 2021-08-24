@@ -11,7 +11,7 @@ rule correct_nan_vertices:
 
 rule decompose_transform:
     input:
-        transform = config['input_path']['transforms']
+        transform = if config['path_transforms_dir'] == 'path_transforms_dir'
     params:
         transform_name_prefix = config['input_path']['transforms'].replace('_mode-image_xfm.h5',''),
         warp = '00_' +  params.transform_name_prefix + '_DisplacementFieldTransform.nii.gz',

@@ -26,11 +26,14 @@ pybids_inputs:
       filters:
         suffix: 'xfm'
         extension: '.h5'
-        datatype: 'anat'
         scope: 'derivatives'
         invalid_filters: 'allow'
       wildcards:
         - subject
+        - session
+        - acquisition
+        - task
+        - run
   
 #configuration for the command-line parameters to make available
 # passed on the argparse add_argument()
@@ -82,6 +85,11 @@ parse_args:
   --fmri_clean_dir:
     help: Cleaned fmri data directory.
     required: True
+
+  --path_transforms_dir:
+    help: Path override for transform files.
+    required: False
+
 
 #--- workflow specific configuration -- below is just an example:
 
