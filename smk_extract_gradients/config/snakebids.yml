@@ -22,19 +22,19 @@ targets_by_analysis_level:
 #    https://bids-standard.github.io/pybids/generated/bids.layout.BIDSLayout.html#bids.layout.BIDSLayout.get
 
 pybids_inputs:
-  # transforms:
-  #     filters:
-  #       suffix: 'xfm'
-  #       extension: '.h5'
-  #       datatype: 'anat'
-  #       scope: 'derivatives'
-  #       invalid_filters: 'allow'
-  #     wildcards:
-  #       - subject
-  #       - session
-  #       - acquisition
-  #       - task
-  #       - run
+  transforms:
+      filters:
+        suffix: 'xfm'
+        extension: '.h5'
+        datatype: 'anat'
+        scope: 'derivatives'
+        invalid_filters: 'allow'
+      wildcards:
+        - subject
+        - session
+        - acquisition
+        - task
+        - run
   
 #configuration for the command-line parameters to make available
 # passed on the argparse add_argument()
