@@ -1,10 +1,14 @@
 import nibabel as nib
+import pandas as pd
 import numpy as np
 
 from brainspace.gradient import GradientMaps
 
 # Get number of subjects
 n_subjects = len(snakemake.input.affinity_matrix)
+
+# Load subject info
+subject_info = pd.read_table(snakemake.input.subject_info, header=None)
 
 # Load first subject's affinity matrix for shape
 affinity_matrix_data = np.load(snakemake.input.affinity_matrix[0])
@@ -33,9 +37,16 @@ gm.fit(affinity_matrix_avg, diffusion_time=0)
 
 # Save gradients to gifti file
 gii = nib.gifti.GiftiImage()
+
 for g in range(0,len(gm.gradients_.T)):
     gii.add_gifti_data_array(
-        nib.gifti.GiftiDataArray(data=gm.gradients_.T[g].astype(np.float32))
+        nib.gifti.GiftiDataArray(
+            data=gm.gradients_.T[g].astype(np.float32),
+            meta={
+                'AnatomicalStructurePrimary':'CortexLeft' if snakemake.wildcards.hemi is 'L' else 'CortexRight',
+                'Name':'Gradient {}'.format(g+1)
+                }
+            )
     ) 
 
 nib.save(gii, snakemake.output.gradient_maps)

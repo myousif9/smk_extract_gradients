@@ -2,7 +2,7 @@ bids_dir: '/path/to/bids_dir'
 output_dir: '/path/to/output_dir'
 
 #enable printing debug statements during parsing -- disable if generating dag visualization
-debug: False
+debug: True
 
 derivatives: True #will search in bids/derivatives if True; can also be path(s) to derivatives datasets
 
@@ -22,12 +22,14 @@ targets_by_analysis_level:
 #    https://bids-standard.github.io/pybids/generated/bids.layout.BIDSLayout.html#bids.layout.BIDSLayout.get
 
 pybids_inputs:
-  transforms:
+  forward_transform:
       filters:
         suffix: 'xfm'
         extension: '.h5'
         datatype: 'anat'
         scope: 'derivatives'
+        from: 'T1w'
+        to: 'MNI152NLin2009cAsym'
         invalid_filters: 'allow'
       wildcards:
         - subject
@@ -35,7 +37,22 @@ pybids_inputs:
         - acquisition
         - task
         - run
-  
+  reverse_transform:
+      filters:
+        suffix: 'xfm'
+        extension: '.h5'
+        datatype: 'anat'
+        scope: 'derivatives'
+        from: 'MNI152NLin2009cAsym'
+        to: 'T1w'
+        invalid_filters: 'allow'
+      wildcards:
+        - subject
+        - session
+        - acquisition
+        - task
+        - run
+
 #configuration for the command-line parameters to make available
 # passed on the argparse add_argument()
 parse_args:
@@ -74,7 +91,7 @@ parse_args:
 
   # --derivatives:
   #   help: 'Path(s) to a derivatives dataset, for folder(s) that contains multiple derivatives datasets (default: %(default)s) '
-  #   default: False
+  #   required: False
   #   nargs: '+'
 
  # custom command-line parameters can then be added, these will get added to the config
@@ -86,9 +103,18 @@ parse_args:
   --fmri_clean_dir:
     help: Cleaned fmri data directory.
     required: True
-
+  
   --fmriprep_dir:
     help: Path override for fmriprep direcotry.
+    required: False
+  
+  --density:
+    help: Define the densities of the hippocampal surfaces to extract gradients for either '2k', '7k' or both ('2k 7k'). Default is only 2k surface.
+    default: 2k 
+    choices:
+      - 2k
+      - 7k
+    nargs: '+' 
     required: False
 
 

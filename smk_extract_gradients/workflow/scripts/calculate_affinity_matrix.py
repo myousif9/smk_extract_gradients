@@ -7,8 +7,6 @@ from nilearn.connectome import ConnectivityMeasure
 from brainspace.gradient import GradientMaps
 from scipy.spatial.distance import pdist, squareform
 
-import matplotlib.pyplot as plt
-
 def pull_data(cifti,structure):
     cifti_file = nib.load(cifti)
     header_data = cifti_file.header.get_axis(1)
@@ -55,39 +53,27 @@ subject = snakemake.wildcards.subject
 hemi    = snakemake.wildcards.hemi
 density = snakemake.wildcards.density
 
-# Input paths
-rfmri_hipp_file = snakemake.input.rfmri_hipp
-rfmri_ctx_file  = snakemake.input.rfmri_ctx
-rfmri_ica_info  = snakemake.input.rfmri_info
-
 # Load hippocampal rfMRI data
+rfmri_hipp_file = snakemake.input.rfmri_hipp
 rfmri_hipp_gii  = nib.load(rfmri_hipp_file)
 
-# Load info to split hippocampal rfMRI data
-rfmri_ica_info_data = pd.read_csv(rfmri_ica_info,header=None,names=['run','start','stop'],index_col='run')
-rfmri_ica_info_data = rfmri_ica_info_data.filter(like='rfMRI', axis=0)
+rfmri_hipp_data_rest = np.zeros((len(rfmri_hipp_gii.darrays[0].data),len(rfmri_hipp_gii.darrays)))
 
-# Define indexes to extract rest runs only
-for i in range(0,len(rfmri_ica_info_data)):
-    if i == 0:
-        idx = np.arange(rfmri_ica_info_data.iloc[i]['start']-1,
-                        rfmri_ica_info_data.iloc[i]['stop'])
-    else:
-        idx = np.hstack((idx,
-                         np.arange(rfmri_ica_info_data.iloc[i]['start']-1,
-                                   rfmri_ica_info_data.iloc[i]['stop']))
-                       )
+for i in range(0,len(rfmri_hipp_gii.darrays)):
+    rfmri_hipp_data_rest[:,i] = rfmri_hipp_gii.darrays[i].data
 
-# Extract rest runs from hipp data
-rfmri_hipp_data_rest = np.zeros((len(rfmri_hipp_gii.darrays[0].data),len(idx)))
-
-for i, ii in enumerate(idx):
-    rfmri_hipp_data_rest[:,i] = rfmri_hipp_gii.darrays[ii].data
-
-# Extract l+r ctx data
+# for r, run in enumerate(snakemake.input.rfmri_ctx):
+rfmri_ctx_file  = snakemake.input.rfmri_ctx
 rfmri_ctx_data_rest = pull_data(rfmri_ctx_file,'cortex')
-
+# if r == 0:
+#     rfmri_ctx_data_rest = pull_data(rfmri_ctx_file,'cortex')
+# else:
+#     rfmri_ctx_data_rest = np.hstack((rfmri_ctx_data_rest,pull_data(rfmri_ctx_file,'cortex')))
+        
 # Compute hipp vertex-wise correlation matrix first
+print(rfmri_hipp_data_rest.shape)
+print(rfmri_ctx_data_rest.shape)
+
 correlation_matrix = generate_correlation_map(rfmri_hipp_data_rest,rfmri_ctx_data_rest)
 
 # Save to npy file
@@ -102,16 +88,16 @@ norm_angle_matrix = 1-(np.arccos(cosine_similarity)/math.pi)
 # Save to npy file
 np.save(snakemake.output.affinity_matrix, norm_angle_matrix)
 
-# Calculate gradients based on normalized angle matrix
-# Kernel = none as input matrix is already affinity matrix
-gm = GradientMaps(n_components=snakemake.params.n_gradients, kernel=None, random_state=0)
-gm.fit(norm_angle_matrix, diffusion_time=0)
+# # Calculate gradients based on normalized angle matrix
+# # Kernel = none as input matrix is already affinity matrix
+# gm = GradientMaps(n_components=snakemake.params.n_gradients, kernel=None, random_state=0)
+# gm.fit(norm_angle_matrix, diffusion_time=0)
 
-# Save gradients to gifti file
-for g in range(0,len(gm.gradients_.T)):
-    gii = nib.gifti.GiftiImage()
-    gii.add_gifti_data_array(
-        nib.gifti.GiftiDataArray(data=gm.gradients_.T[g].astype(np.float32))
-    ) 
+# # Save gradients to gifti file
+# for g in range(0,len(gm.gradients_.T)):
+#     gii = nib.gifti.GiftiImage()
+#     gii.add_gifti_data_array(
+#         nib.gifti.GiftiDataArray(data=gm.gradients_.T[g].astype(np.float32))
+#     ) 
 
-    nib.save(gii, snakemake.output.gradient_maps[g])
+#     nib.save(gii, snakemake.output.gradient_maps[g])
