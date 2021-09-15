@@ -37,6 +37,7 @@ pybids_inputs:
         - acquisition
         - task
         - run
+
   reverse_transform:
       filters:
         suffix: 'xfm'
@@ -47,6 +48,36 @@ pybids_inputs:
         to: 'T1w'
         invalid_filters: 'allow'
       wildcards:
+        - subject
+        - session
+        - acquisition
+        - task
+        - run
+
+  bold_volume:
+    filters:
+      suffix: 'bold'
+      extension: '.nii.gz'
+      datatype: 'func'
+      scope: 'derivatives'
+      task: 'rest'
+      space: 'MNI152NLin2009cAsym'
+      invalid_filters: 'allow'
+    wildcards:
+        - subject
+        - session
+        - acquisition
+        - task
+        - run
+    
+  bold_surface:
+    filters:
+      suffix: 'bold'
+      extension: '.dtseries.nii'
+      task: 'rest'
+      space: 'fsLR'
+      invalid_filters: 'allow'
+    wildcards:
         - subject
         - session
         - acquisition

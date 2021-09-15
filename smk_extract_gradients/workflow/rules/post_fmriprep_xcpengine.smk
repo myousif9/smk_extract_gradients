@@ -91,6 +91,8 @@ rule calculate_affinity_matrix:
     group: 'subj'
     script: '../scripts/calculate_affinity_matrix.py'
 
+
+
 # rule calculate_average_gradients:
 #     input:
 #         affinity_matrix = expand('deriv/post_hcp/sub-{subject}/correlation_matrix/sub-{subject}_hemi-{{hemi}}_space-MNI_den-{{density}}_affinitymatrix.npy',subject=config['participant_label'])

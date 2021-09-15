@@ -31,7 +31,6 @@ wildcard_constraints:  **snakebids.get_wildcard_constraints(\
 
 rule all:
     input: 
-        # expand('deriv/post_fmriprep/sub-{subject}/surface_maps/sub-{subject}_hemi-{hemi}_space-MNI_den-{density}_alignedgradients.func.gii',hemi=['L','R'],density=['2k']),
         expand(bids(
             root = "results",
             datatype = "func",
@@ -43,12 +42,13 @@ rule all:
             density=config['density'],
             hemi = ['L','R'],
             **config['input_lists']['reverse_transform']),
-        # expand('deriv/post_fmriprep/sub-{subject}/correlation_matrix/sub-{subject}_hemi-{hemi}_space-MNI152NLin2009cAsym_den-{density}_affinitymatrix.npy',subject=config['participant_label'],hemi=['L','R'],density=['2k']),
-        # expand('deriv/post_fmriprep/sub-avg/surface_maps/sub-avg_hemi-{hemi}_space-MNI_den-{density}_gradients.func.gii',hemi=['L','R'],density=['2k','7k']),
-        # expand('deriv/post_hippunfold/sub-avg/surf_MNI/sub-avg_hemi-{hemi}_space-MNI_den-{density}_desc-nancorrect_midthickness.surf.gii',hemi=['L','R'],density=['2k','7k']),
-
+        
 subject_list = sorted(pd.read_csv(join(config['bids_dir'],'participants.tsv'),sep='\t')['participant_id'].to_list())
+
+# include: 'rules/xcp_engine.smk'
 
 include: 'rules/post_hippunfold.smk'
 
-include: 'rules/post_hcp.smk'
+include: 'rules/post_fmriprep_xcpengine.smk'
+
+

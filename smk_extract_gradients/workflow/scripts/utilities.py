@@ -1,5 +1,7 @@
 import nibabel as nb
 import numpy as np
+import pandas as pd
+import os
 
 def gifti2csv(gii_file, out_file, itk_lps = True):
         gii = nb.load(gii_file)
@@ -48,4 +50,36 @@ def csv2gifti(csv_file, gii_file, out_file, itk_lps = True):
     )
     
     new_gii.to_filename(out_file)
+
+def get_fmriprep_dir(fmri_path):
+    fmri_path_list = fmri_path.split('/')
+    
+    for idx, path_item in enumerate(fmri_path_list):
+        if 'fmriprep' == path_item.strip():
+            return '/'.join(fmri_path_list[0:idx])
+
+def gen_cohort(fmri_path,fmriprep_dir,output_file,wildcards):
+    
+    cohort_dict = {}
+    
+    for idx, wildcard in enumerate(wildcards.values()):
+        if 'subject' in wildcard:
+            cohort_col = len(cohort_dict.values())
+            cohort_dict['id'+str(cohort_col)] = [wildcards['subject']]
+        elif 'ses' in wildcard:
+            cohort_col = len(cohort_col) + 1
+            cohort_dict['id'+str(cohort_col)] = [wildcards['ses']]
+        elif 'run' in wildcard:
+            cohort_col = len(cohort_col) + 1
+            cohort_dict['id'+str(cohort_col)] = [wildcards['run']]
+    
+    cohort_dict['img'] = fmri_path.replace(fmriprep_dir,'').strip('/')
+
+    cohort_df = pd.Dataframe.from_dict(cohort_dict)
+
+    if os.path.exists(cohort_df) == False:
+        cohort_df.to_csv(output_file, index=0)
+    else:
+        old_cohort_df =  pd.read_csv(output_file)
+        pd.concat([old_cohort_df,cohort_df]).to_csv(output_file, index = 0)
 

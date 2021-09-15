@@ -29,41 +29,6 @@ rule correct_nan_vertices:
     group: 'subj'
     script: '../scripts/fix_nan_vertices.py'
 
-# warp_reformat = lambda transform_path: str(transform_path).replace('.h5','').split('/')[-1] + '_DisplacementFieldTransform.nii.gz'
-# affine_reformat = lambda transform_path: str(transform_path).replace('.h5','').split('/')[-1] + '_AffineTransform.mat'
-
-
-
-# rule decompose_transform:
-#     input:
-#         fwd_transform = config['input_path']['forward_transform'],
-#         rvr_transform = config['input_path']['reverse_transform'],
-#     params:
-#         transform_dir = join(config['output_dir'],'deriv/post_fmriprep/sub-{subject}/MNINonLinear/'),
-#         fwd_prefix = str(config['input_path']['forward_transform']).replace('.h5','').split('/')[-1],
-#         rvr_prefix = str(config['input_path']['reverse_transform']).replace('.h5','').split('/')[-1],
-#     output:
-#         fwd_warp = join('deriv/post_fmriprep/sub-{subject}/MNINonLinear/', warp_reformat(config['input_path']['forward_transform'])),
-#         fwd_affine = join('deriv/post_fmriprep/sub-{subject}/MNINonLinear/', affine_reformat(config['input_path']['forward_transform'])),
-#         rvr_warp = join('deriv/post_fmriprep/sub-{subject}/MNINonLinear/', warp_reformat(config['input_path']['reverse_transform'])),
-#         rvr_affine = join('deriv/post_fmriprep/sub-{subject}/MNINonLinear/', affine_reformat(config['input_path']['reverse_transform'])),
-#     group: 'subj'
-#     shell:
-#         """
-#         module load StdEnv/2020
-#         module load gcc/9.3.0 
-#         module load ants/2.3.5
-
-#         cd {params.transform_dir} 
-        
-#         CompositeTransformUtil --disassemble {input.fwd_transform} {params.fwd_prefix} 
-#         CompositeTransformUtil --disassemble {input.rvr_transform} {params.rvr_prefix} 
-
-#         for file in *; do
-#             mv ${{file}} `echo ${{file}} | cut -c 4-`
-#         done
-#         """
-
 rule gifti2csv:
     input:
         # surf = 'deriv/post_hippunfold/sub-{subject}/surf_T1w/sub-{subject}_hemi-{hemi}_space-T1w_den-{density}_desc-nancorrect_midthickness.surf.gii',
@@ -211,5 +176,5 @@ rule set_surf_structure:
 #         expand('deriv/post_hippunfold/sub-{subject}/surf_MNI/sub-{subject}_hemi-{{hemi}}_space-MNI_den-{{density}}_desc-nancorrect_midthickness.surf.gii',subject=subject_list)
 #     output:
 #         surf = 'deriv/post_hippunfold/sub-avg/surf_MNI/sub-avg_hemi-{hemi}_space-MNI_den-{density}_desc-nancorrect_midthickness.surf.gii'
-#     group: 'subj'
+#     group: 'average'
 #     script: '../scripts/create_average_surface.py'
