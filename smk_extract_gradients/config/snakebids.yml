@@ -148,6 +148,18 @@ parse_args:
     nargs: '+' 
     required: False
 
+  --hemi:
+    help: Define the hemispheres of the hippocampus to run this pipeline with.
+    default:
+      - R
+      - L
+    choices:
+      - R
+      - L
+    nargs: '+'
+    required: False
+
+
 
 #--- workflow specific configuration -- below is just an example:
 

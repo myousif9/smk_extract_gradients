@@ -8,7 +8,7 @@ from brainspace.gradient import GradientMaps
 n_subjects = len(snakemake.input.affinity_matrix)
 
 # Load subject info
-subject_info = pd.read_table(snakemake.input.subject_info, header=None)
+# subject_info = pd.read_table(snakemake.input.subject_info, header=0)
 
 # Load first subject's affinity matrix for shape
 affinity_matrix_data = np.load(snakemake.input.affinity_matrix[0])
