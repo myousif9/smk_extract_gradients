@@ -75,6 +75,7 @@ print(rfmri_hipp_data_rest.shape)
 print(rfmri_ctx_data_rest.shape)
 
 correlation_matrix = generate_correlation_map(rfmri_hipp_data_rest,rfmri_ctx_data_rest)
+correlation_matrix = np.nan_to_num(correlation_matrix)
 
 # Save to npy file
 np.save(snakemake.output.correlation_matrix, correlation_matrix)

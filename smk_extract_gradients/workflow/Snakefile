@@ -31,6 +31,14 @@ wildcard_constraints:  **snakebids.get_wildcard_constraints(\
 
 rule all:
     input: 
+        # expand(directory(
+        #     bids(
+        #         root = "result",
+        #         dataype = 'xcpengine'
+        #         **config['input_wildcards']['bold_volume']
+        #     )), 
+        #     **config['input_lists']['bold_volume']
+        # ),
         expand(bids(
             root = "results",
             datatype = "func",
@@ -42,13 +50,6 @@ rule all:
             density=config['density'],
             hemi = config['hemi'],
             **config['input_lists']['reverse_transform']),
-
-        # expand(bids(
-        #     root = "work",
-        #     suffix = "aggregate.done",
-        #     **config["input_wildcards"]['reverse_transform']
-        # ), **config['input_lists']['reverse_transform']),
-
         expand(bids(
             root = "results",
             datatype = "func",
@@ -58,15 +59,19 @@ rule all:
             desc = "aligned",
             suffix = "gradients.func.gii",
             **config["input_wildcards"]['reverse_transform']), 
-        density=config['density'],
-        hemi = config['hemi'],
-        **config['input_lists']['reverse_transform']),
-        #  bids(
-        #     root = "work",
-        #     prefix = "group",
-        #     suffix = "complete.tsv"),
-
-# subject_list = sorted(pd.read_csv(join(config['bids_dir'],'participants.tsv'),sep='\t')['participant_id'].to_list())
+            density=config['density'],
+            hemi = config['hemi'],
+            **config['input_lists']['reverse_transform']),
+        expand(bids(
+            root = "work",
+            datatype = "func",
+            hemi = "{hemi}",
+            den = "{density}",
+            suffix = "func.done",
+            **config["input_wildcards"]['reverse_transform']), 
+            density=config['density'],
+            hemi = config['hemi'],
+            **config['input_lists']['reverse_transform']),
 
 # include: 'rules/xcp_engine.smk'
 

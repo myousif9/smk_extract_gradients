@@ -1,6 +1,4 @@
-# from niworkflows.interfaces.surf import CSVToGifti, GiftiToCSV
 from scripts.utilities import gifti2csv, csv2gifti
-import shutil
 
 rule correct_nan_vertices:
     input: 
@@ -43,7 +41,6 @@ rule gifti2csv:
             **config["subj_wildcards"]
         ),
     output:
-        # surf = 'deriv/post_hippunfold/sub-{subject}/surf_T1w/sub-{subject}_hemi-{hemi}_space-T1w_den-{density}_desc-nancorrect_midthickness.surfpoints.csv'
         surf = bids(
             root = "work",
             datatype = "anat",
@@ -60,7 +57,6 @@ rule gifti2csv:
 
 rule apply_transform:
     input:
-        # surf = 'deriv/post_hippunfold/sub-{subject}/surf_T1w/sub-{subject}_hemi-{hemi}_space-T1w_den-{density}_desc-nancorrect_midthickness.surfpoints.csv',
         rvr_transform = config['input_path']['reverse_transform'],
         surf = bids(
             root = "work",
@@ -73,7 +69,6 @@ rule apply_transform:
             **config["subj_wildcards"]
         ),
     output:
-        # surf = 'deriv/post_hippunfold/sub-{subject}/surf_MNI/sub-{subject}_hemi-{hemi}_space-MNI152NLin2009cAsym_den-{density}_desc-nancorrect_midthickness.surfpoints.csv',
         surf = bids(
             root = "work",
             datatype = "anat",
@@ -84,19 +79,20 @@ rule apply_transform:
             suffix = "midthickness.surfpoints.csv",
             **config["subj_wildcards"]
         ),
+    container: config['singularity']['ants']
     group: 'subj'
     shell:
         """ 
-        module load StdEnv/2020
-        module load gcc/9.3.0 
-        module load ants/2.3.5
+        # replace with container
+        # module load StdEnv/2020
+        # module load gcc/9.3.0 
+        # module load ants/2.3.5
 
         antsApplyTransformsToPoints -d 3 -i {input.surf} -o {output.surf} -t {input.rvr_transform}
         """
 
 rule csv2gifti:
     input:
-        # surf_csv = 'deriv/post_hippunfold/sub-{subject}/surf_MNI/sub-{subject}_hemi-{hemi}_space-MNI152NLin2009cAsym_den-{density}_desc-nancorrect_midthickness.surfpoints.csv',
         surf_csv = bids(
             root = "work",
             datatype = "anat",
@@ -107,7 +103,6 @@ rule csv2gifti:
             suffix = "midthickness.surfpoints.csv",
             **config["subj_wildcards"]
         ),
-        # surf_gii = 'deriv/post_hippunfold/sub-{subject}/surf_T1w/sub-{subject}_hemi-{hemi}_space-T1w_den-{density}_desc-nancorrect_midthickness.surf.gii',
         surf_gii = bids(
             root = "results",
             datatype = "anat",
@@ -119,7 +114,6 @@ rule csv2gifti:
             **config["subj_wildcards"]
         ),
     output:
-        # surf = 'deriv/post_hippunfold/sub-{subject}/surf_MNI/sub-{subject}_hemi-{hemi}_space-MNI152NLin2009cAsym_den-{density}_desc-nancorrect_midthickness.surf.gii'
         surf = bids(
             root = "results",
             datatype = "anat",
@@ -136,7 +130,6 @@ rule csv2gifti:
 
 rule set_surf_structure:
     input:
-        # surf = 'deriv/post_hippunfold/sub-{subject}/surf_MNI/sub-{subject}_hemi-{hemi}_space-MNI152NLin2009cAsym_den-{density}_desc-nancorrect_midthickness.surf.gii'
         surf = bids(
             root = "results",
             datatype = "anat",
@@ -150,7 +143,6 @@ rule set_surf_structure:
     params:
         structure = "CORTEX_LEFT" if "{hemi}" == "L" else "CORTEX_RIGHT"
     output:
-        # surf = 'deriv/post_hippunfold/sub-{subject}/surf_MNI/sub-{subject}_hemi-{hemi}_space-MNI152NLin2009cAsym_den-{density}_desc-nancorrect_midthickness.surf.gii',
         check = bids(
             root = "work",
             datatype = "anat",
@@ -159,22 +151,17 @@ rule set_surf_structure:
             suffix = "structure.done",
             **config['subj_wildcards']
         ),
-        # 'deriv/post_hippunfold/sub-{subject}/surf_MNI/set_structure.done'
+    container: config['singularity']['autotop']
     group: 'subj'
     shell: 
         """
-        MODULEPATH=/project/6050199/software/transparentsingularity/modules:$MODULEPATH
-        export MODULEPATH
+        # replace with container
+        # MODULEPATH=/project/6050199/software/transparentsingularity/modules:$MODULEPATH
+        # export MODULEPATH
 
-        module load connectome-workbench
+        # module load connectome-workbench
         wb_command -set-structure {input.surf} {params.structure} -surface-type ANATOMICAL
         touch {output.check}
         """
 
-# rule create_average_surface:
-#     input:
-#         expand('deriv/post_hippunfold/sub-{subject}/surf_MNI/sub-{subject}_hemi-{{hemi}}_space-MNI_den-{{density}}_desc-nancorrect_midthickness.surf.gii',subject=subject_list)
-#     output:
-#         surf = 'deriv/post_hippunfold/sub-avg/surf_MNI/sub-avg_hemi-{hemi}_space-MNI_den-{density}_desc-nancorrect_midthickness.surf.gii'
-#     group: 'average'
-#     script: '../scripts/create_average_surface.py'
+

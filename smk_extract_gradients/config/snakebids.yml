@@ -133,7 +133,7 @@ parse_args:
 
   --fmri_clean_dir:
     help: Cleaned fmri data directory.
-    required: True
+    required: False
   
   --fmriprep_dir:
     help: Path override for fmriprep direcotry.
@@ -151,16 +151,31 @@ parse_args:
   --hemi:
     help: Define the hemispheres of the hippocampus to run this pipeline with.
     default:
-      - R
       - L
+      - R
     choices:
-      - R
       - L
+      - R
     nargs: '+'
     required: False
 
+  #refernce gradient flag
+  --reference_gradient:
+    help: Passing reference gradient for allignment of subject gradients
+    required: False
 
 
 #--- workflow specific configuration -- below is just an example:
 
 n_gradients: 10
+
+singularity:
+    ants: 'docker://kaczmarj/ants:2.3.4'
+    autotop: 'docker://khanlab/autotop_deps:nighres'
+    xcpengine: 'docker://pennbbl/xcpengine:1.2.4'
+
+# singularity:
+#     ants: '/scratch/myousif9/containers/ants_2.3.4.sif'
+#     autotop: '/scratch/myousif9/containers/autotop_deps_nighres.sif'
+#     xcpengine: '/project/ctb-akhanf/rhaast/01_Software/singularity/pennbbl_xcpengine_latest.sif'
+    
