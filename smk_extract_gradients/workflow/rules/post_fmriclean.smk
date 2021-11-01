@@ -131,7 +131,7 @@ rule calculate_average_gradients:
         n_gradients = config['n_gradients']
 
     group: 'calc_gradients'
-    log: bids(root = 'logs',**subj_wildcards, task = '{task}', hemi = '{hemi}', den = '{density}', suffix = 'calculate-average-gradients.txt')
+    log: bids(root = 'logs', sub = 'avg', task = '{task}', hemi = '{hemi}', den = '{density}', suffix = 'calculate-average-gradients.txt')
     script: '../scripts/calculate_average_gradients.py'
 
 rule calculate_aligned_gradients:
