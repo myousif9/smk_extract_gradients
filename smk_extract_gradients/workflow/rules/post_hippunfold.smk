@@ -1,15 +1,6 @@
 rule correct_nan_vertices:
     input: 
         surf = lambda wildcards: hippunfold_surf_list[wildcards.subject]
-        # surf = bids(
-        #     root = join(config['hippunfold_dir'],'results'),
-        #     datatype = "surf_T1w",
-        #     hemi = "{hemi}",
-        #     space = "T1w",
-        #     den = "{density}",
-        #     suffix = "midthickness.surf.gii",
-        #     **subj_wildcards
-        # ),
     output:
         surf = bids(
             root = "results",
@@ -27,16 +18,7 @@ rule correct_nan_vertices:
 
 rule gifti2csv:
     input:
-        surf = bids(
-            root = "results",
-            datatype = "anat",
-            hemi = "{hemi}",
-            space = "T1w",
-            den = "{density}",
-            desc = "nancorrect",
-            suffix = "midthickness.surf.gii",
-            **subj_wildcards
-        ),
+        surf = rules.correct_nan_vertices.output.surf
     output:
         surf = bids(
             root = "work",
@@ -56,16 +38,7 @@ rule gifti2csv:
 rule apply_transform:
     input:
         rvr_transform = config['input_path']['reverse_transform'],
-        surf = bids(
-            root = "work",
-            datatype = "anat",
-            hemi = "{hemi}",
-            space = "T1w",
-            den = "{density}",
-            desc = "nancorrect",
-            suffix = "midthickness.surfpoints.csv",
-            **subj_wildcards
-        ),
+        surf = rules.gifti2csv.output.surf
     output:
         surf = bids(
             root = "work",
@@ -92,26 +65,8 @@ rule apply_transform:
 
 rule csv2gifti:
     input:
-        surf_csv = bids(
-            root = "work",
-            datatype = "anat",
-            hemi = "{hemi}",
-            space = "MNI152NLin2009cAsym",
-            den = "{density}",
-            desc = "nancorrect",
-            suffix = "midthickness.surfpoints.csv",
-            **subj_wildcards
-        ),
-        surf_gii = bids(
-            root = "results",
-            datatype = "anat",
-            hemi = "{hemi}",
-            space = "T1w",
-            den = "{density}",
-            desc = "nancorrect",
-            suffix = "midthickness.surf.gii",
-            **subj_wildcards
-        ),
+        surf_csv = rules.apply_transform.output.surf,
+        surf_gii = rules.correct_nan_vertices.output.surf
     output:
         surf = bids(
             root = "results",
@@ -130,16 +85,7 @@ rule csv2gifti:
 
 rule set_surf_structure:
     input:
-        surf = bids(
-            root = "results",
-            datatype = "anat",
-            hemi = "{hemi}",
-            space = "MNI152NLin2009cAsym",
-            den = "{density}",
-            desc = "nancorrect",
-            suffix = "midthickness.surf.gii",
-            **subj_wildcards
-        ),
+        surf = rules.csv2gifti.output.surf
     params:
         structure = "CORTEX_LEFT" if "{hemi}" == "L" else "CORTEX_RIGHT"
     output:

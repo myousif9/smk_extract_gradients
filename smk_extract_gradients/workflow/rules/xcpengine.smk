@@ -24,12 +24,13 @@ rule gen_cohort:
 rule run_xcpengine:
     input:
         rfmri = lambda wildcards: fmri_img_list[wildcards.subject],
-        cohort = bids(
-            root = "work",
-            datatype = "func",
-            task = '{task}',
-            suffix = 'cohort.csv',
-            **subj_wildcards),
+        cohort = rules.gen_cohort.output.cohort,
+        # bids(
+        #     root = "work",
+        #     datatype = "func",
+        #     task = '{task}',
+        #     suffix = 'cohort.csv',
+        #     **subj_wildcards),
         pipeline_design = os.path.join(config['snakemake_dir'], config['fmri_cleaning_design']['36p']) # need to make this more modular depending on cleaning design chosen
     params:
         fmriprep_dir = get_fmriprep_dir(config['input_path']['bold_volume']),
@@ -46,7 +47,7 @@ rule run_xcpengine:
     group: 'xcpengine_subj'
     resources:
         mem_mb = 32000,
-        time = 120
+        time = 480
     log: bids(root = 'logs',**subj_wildcards, task = '{task}', suffix = 'fmri_cleaning.txt')
     shell:
         """
@@ -64,12 +65,7 @@ rule clean_fmri_reorganize:
             **subj_wildcards),
             subject = subjects,
             ),
-        cohort = bids(
-            root = "work",
-            datatype = "func",
-            task = '{task}',
-            suffix = 'cohort.csv',
-            **subj_wildcards)
+        cohort = rules.gen_cohort.output.cohort
     output:
         fmri =  bids(
             root = 'results',

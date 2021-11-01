@@ -1,31 +1,8 @@
 rule map_rfmri_hippunfold_surface:
     input:
-        check_struct = bids(
-            root = "work",
-            datatype = "anat",
-            hemi = "{hemi}",
-            den = "{density}",
-            suffix = "structure.done",
-            **subj_wildcards
-            ),
-        surf = bids(
-            root = "results",
-            datatype = "anat",
-            hemi = "{hemi}",
-            space = "MNI152NLin2009cAsym",
-            den = "{density}",
-            desc = "nancorrect",
-            suffix = "midthickness.surf.gii",
-            **subj_wildcards
-            ),
-        fmri =  bids(
-            root = 'results',
-            datatype = 'func',
-            task =  '{task}',
-            desc =  'cleaned',
-            suffix =  'bold.nii.gz',
-            **subj_wildcards
-            )
+        check_struct = rules.set_surf_structure.output.check,
+        surf = rules.csv2gifti.output.surf,
+        fmri = rules.clean_fmri_reorganize.output.fmri
     output:
         rfmri = bids(
             root = "results",
@@ -51,16 +28,7 @@ rule map_rfmri_hippunfold_surface:
 
 rule calculate_affinity_matrix:
     input:
-        rfmri_hipp = bids(
-            root = "results",
-            datatype = "func",
-            task =  '{task}',
-            hemi = "{hemi}",
-            space = "MNI152NLin2009cAsym",
-            den = "{density}",
-            suffix = "bold.func.gii",
-            **subj_wildcards
-            ),
+        rfmri_hipp = rules.map_rfmri_hippunfold_surface.output.rfmri
     params:
         n_gradients = config['n_gradients'],
         rfmri_ctx = lambda wildcards: join('results/xcpengine/', fmri_path_cohort( input.fmri_cohort_path )[1])
@@ -136,26 +104,8 @@ rule calculate_average_gradients:
 
 rule calculate_aligned_gradients:
     input:
-        affinity_matrix = bids(
-            root = "results",
-            datatype = "func",
-            task = '{task}',
-            hemi = "{hemi}",
-            space = "MNI152NLin2009cAsym",
-            den = "{density}",
-            suffix = "affinitymatrix.npy",
-            **subj_wildcards
-            ),
-        avg_affinity_matrix = bids(
-            root = "results",
-            datatype = "group",
-            prefix = "sub_avg",
-            task = '{task}',
-            hemi = "{hemi}",
-            space = "MNI152NLin2009cAsym",
-            den = "{density}",
-            suffix = "affinitymatrix.npy"
-            ),
+        affinity_matrix = rules.calculate_affinity_matrix.output.affinity_matrix,
+        avg_affinity_matrix = rules.calculate_average_gradients.output.affinity_matrix
     output:
         gradient_maps = bids(
             root = "results",
@@ -187,17 +137,7 @@ rule calculate_aligned_gradients:
 
 rule set_func_structure:
     input:
-        gradient_maps = bids(
-            root = "results",
-            datatype = "func",
-            task = '{task}',
-            hemi = "{hemi}",
-            space = "MNI152NLin2009cAsym",
-            den = "{density}",
-            desc = "aligned",
-            suffix = "gradients.func.gii",
-            **subj_wildcards
-            )
+        gradient_maps = rules.calculate_aligned_gradients.output.gradient_maps
     params:
         structure = "CORTEX_LEFT" if "{hemi}" == "L" else "CORTEX_RIGHT"
     output:
