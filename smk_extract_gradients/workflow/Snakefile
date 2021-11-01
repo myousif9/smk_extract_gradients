@@ -2,10 +2,15 @@
 
 import snakebids
 from snakebids import bids
-# from niworkflows.interface.surf import GiftiToCSV, CSVToGifti
 from os.path import join
 import os
 import pandas as pd 
+import numpy as np
+import shutil
+from bids import BIDSLayout
+from operator import itemgetter
+from glob import glob
+from scripts.utilities import gifti2csv, csv2gifti, fmri_path_cohort
 
 configfile: 'config/snakebids.yml'
 
@@ -21,7 +26,6 @@ config.update(
 )
 
 
-
 #this adds constraints to the bids naming
 wildcard_constraints:  **snakebids.get_wildcard_constraints(\
     config["pybids_inputs"]\
@@ -29,54 +33,146 @@ wildcard_constraints:  **snakebids.get_wildcard_constraints(\
 
 #---- end snakebids boilerplate ------------------------------------------------
 
+config['input_lists']['bold_volume']['task'] = config['task']
+
+# defining wildcards variables
+subj_wildcards = config["subj_wildcards"]
+fmri_wildcards = config['input_wildcards']['bold_volume']
+transform_wildcards = config['input_wildcards']['reverse_transform']
+
+# defining image specific wildcard input list variables
+fmri_input_list = config['input_lists']['bold_volume']
+transform_input_list = config['input_lists']['reverse_transform']
+
+# parsing bids dataset to retain scans with the highest numbered run
+# ***ADD FLAG FOR CHOOSING RUN NUMBER OR PROVIDING DICT OR CSV TO SPECIFY RUN ***
+layout = BIDSLayout(config['bids_dir'], derivatives = True, validate = False)
+
+# obtaining fmriprep processed bold images
+bold_images = layout.get(task = config['task'], space = 'MNI152NLin2009cAsym', suffix = 'bold', extension = '.nii.gz' )
+
+# obtaining subject list corresponding to available bold images
+sub_idx = [ next(iter([item.replace('sub-','') for item in bold_name.filename.split('_') if 'sub' in item])) for bold_name in bold_images]
+
+# joining subject list and bold image list to get subject dictionary with adjacent scans
+df = pd.DataFrame([dict(zip(sub_idx,[img.path for img in bold_images]))])
+fmri_img_list = df.transpose().to_dict()[0]
+
+#checks hippunfold and grabs only subjects with output that exisits
+hippunfold_dir = config['hippunfold_dir']
+hippunfold_dir = join(hippunfold_dir,'results') if 'results' not in hippunfold_dir else hippunfold_dir
+
+hippunfold_subjects = [ subj_dir.strip('sub-') for subj_dir in os.listdir(hippunfold_dir) if 'sub' in subj_dir ]
+hippunfold_paths = [glob(join(hippunfold_dir, 'sub-{subject}/surf_*/sub-{subject}_hemi-*_space-*_den-{density}_midthickness.surf.gii'.format(subject = subj, density=config['density']))) for subj in hippunfold_subjects]
+
+# initializing list of indicies and paths
+hippunfold_input_list = [[], []]
+
+for idx, path_list in enumerate(hippunfold_paths):
+    if path_list != []:
+        hippunfold_input_list[0].append(idx), hippunfold_input_list[1].append(path_list)
+    else:
+        continue
+
+getter = itemgetter(*hippunfold_input_list[0])
+hippunfold_subjects = getter(hippunfold_subjects)
+hippunfold_subj_set = set(hippunfold_subjects)
+
+def filter_hippunfold_list(path_list):
+    new_list = []
+    for item in path_list:
+        if 'unfolded' in item:
+            continue
+        else:
+            item = item.replace('hemi-L','hemi-{hemi}')
+            item = item.replace('hemi-R','hemi-{hemi}')
+            new_list.append(item)
+    return list(set(new_list))[0]
+
+hippunfold_surf_list = dict(zip(hippunfold_subjects , list(map(filter_hippunfold_list, hippunfold_input_list[1]))))
+
+# getting available subject list and fixing available subjects to pybids input lists
+subjects = list(fmri_img_list.keys())
+
+# using sets to obtain subjects with existing transforms and bold images
+transform_subj_set = set(transform_input_list['subject'])
+subj_set = set(subjects)
+fmri_subj_set = set(fmri_input_list['subject'])
+
+subjects = transform_subj_set.intersection(subj_set)
+subjects = subjects.intersection(fmri_subj_set)
+subjects = list(subjects.intersection(hippunfold_subj_set))
+
+transform_input_list['subject'] = subjects
+fmri_input_list['subject'] = subjects
+
 rule all:
     input: 
-        # expand(directory(
-        #     bids(
-        #         root = "result",
-        #         dataype = 'xcpengine'
-        #         **config['input_wildcards']['bold_volume']
-        #     )), 
-        #     **config['input_lists']['bold_volume']
-        # ),
+        expand(bids(
+            root = "work",
+            datatype = "func",
+            task = '{task}',
+            suffix = "fmriclean.done",
+            **transform_wildcards),
+            task = config['task'],
+            **transform_input_list
+            ),
+        expand(bids(
+            root = 'results',
+            datatype = 'func',
+            task =  '{task}',
+            desc =  'cleaned',
+            suffix =  'bold.nii.gz',
+            **transform_wildcards),
+            task = config['task'],
+            **transform_input_list
+            ),
         expand(bids(
             root = "results",
             datatype = "func",
+            task = '{task}',
             hemi = "{hemi}",
             space = "MNI152NLin2009cAsym",
             den = "{density}",
             suffix = "bold.func.gii",
-            **config["input_wildcards"]['reverse_transform']),
+            **transform_wildcards),
+            task = config['task'],
             density=config['density'],
             hemi = config['hemi'],
-            **config['input_lists']['reverse_transform']),
+            **transform_input_list
+            ),
         expand(bids(
             root = "results",
             datatype = "func",
+            task =  '{task}',
             hemi = "{hemi}",
             space = "MNI152NLin2009cAsym",
-            density = "{density}",
+            den = "{density}",
             desc = "aligned",
             suffix = "gradients.func.gii",
-            **config["input_wildcards"]['reverse_transform']), 
+            **transform_wildcards),
+            task = config['task'], 
             density=config['density'],
             hemi = config['hemi'],
-            **config['input_lists']['reverse_transform']),
+            **transform_input_list
+            ),
         expand(bids(
             root = "work",
             datatype = "func",
+            task =  '{task}',
             hemi = "{hemi}",
             den = "{density}",
             suffix = "func.done",
-            **config["input_wildcards"]['reverse_transform']), 
+            **transform_wildcards),
+            task = config['task'], 
             density=config['density'],
             hemi = config['hemi'],
-            **config['input_lists']['reverse_transform']),
+            **transform_input_list
+            ),
 
-# include: 'rules/xcp_engine.smk'
+include: 'rules/xcpengine.smk'
 
 include: 'rules/post_hippunfold.smk'
 
-include: 'rules/post_fmriprep_xcpengine.smk'
-
+include: 'rules/post_fmriclean.smk'
 

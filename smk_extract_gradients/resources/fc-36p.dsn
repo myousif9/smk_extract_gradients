@@ -33,7 +33,7 @@
 ###################################################################
 
 analysis=fc_$(whoami)
-design=/scratch/myousif9/bids-apps/run_xcpEngine/fc-36p.dsn
+design=/scratch/myousif9/smk_extract_gradients/smk_extract_gradients/resources/fc-36p.dsn
 sequence=anatomical
 standard=MNI%2x2x2
 

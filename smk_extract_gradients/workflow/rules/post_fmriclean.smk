@@ -1,13 +1,13 @@
 rule map_rfmri_hippunfold_surface:
     input:
-        check = bids(
+        check_struct = bids(
             root = "work",
             datatype = "anat",
             hemi = "{hemi}",
             den = "{density}",
             suffix = "structure.done",
-            **config["subj_wildcards"]
-        ),
+            **subj_wildcards
+            ),
         surf = bids(
             root = "results",
             datatype = "anat",
@@ -16,34 +16,36 @@ rule map_rfmri_hippunfold_surface:
             den = "{density}",
             desc = "nancorrect",
             suffix = "midthickness.surf.gii",
-            **config["subj_wildcards"]
-        ),
-        rfmri = join(config['fmri_clean_dir'],'sub-{subject}/run-1/regress/sub-{subject}_run-1_residualised.nii.gz')
+            **subj_wildcards
+            ),
+        fmri =  bids(
+            root = 'results',
+            datatype = 'func',
+            task =  '{task}',
+            desc =  'cleaned',
+            suffix =  'bold.nii.gz',
+            **subj_wildcards
+            )
     output:
         rfmri = bids(
             root = "results",
             datatype = "func",
+            task =  '{task}',
             hemi = "{hemi}",
             space = "MNI152NLin2009cAsym",
             den = "{density}",
             suffix = "bold.func.gii",
-            **config["subj_wildcards"]
-        )
+            **subj_wildcards
+            )
     container: config['singularity']['autotop']
-    group: 'subj'
+    group: 'postfmriclean_subj'
     threads: 8
     resources:
         mem_mb = 16000,
         time = 60    
     shell:
         """
-        # replace with container
-        # MODULEPATH=/project/6050199/software/transparentsingularity/modules:$MODULEPATH
-        # export MODULEPATH
-
-        # module load connectome-workbench
-
-        wb_command -volume-to-surface-mapping {input.rfmri} {input.surf} {output.rfmri} -trilinear
+        wb_command -volume-to-surface-mapping {input.fmri} {input.surf} {output.rfmri} -trilinear
         """
 
 rule calculate_affinity_matrix:
@@ -51,39 +53,42 @@ rule calculate_affinity_matrix:
         rfmri_hipp = bids(
             root = "results",
             datatype = "func",
+            task =  '{task}',
             hemi = "{hemi}",
             space = "MNI152NLin2009cAsym",
             den = "{density}",
             suffix = "bold.func.gii",
-            **config["subj_wildcards"]
-        ),
-        rfmri_ctx = join(config['fmri_clean_dir'],'sub-{subject}/run-1/regress/sub-{subject}_run-1_residualised_space-fsLR_den-91k_bold.dtseries.nii'),
+            **subj_wildcards
+            ),
     params:
-        n_gradients = config['n_gradients']
+        n_gradients = config['n_gradients'],
+        rfmri_ctx = lambda wildcards: join('results/xcpengine/', fmri_path_cohort( input.fmri_cohort_path )[1])
     output:
         correlation_matrix = bids(
             root = "results",
             datatype = "func",
+            task = '{task}',
             hemi = "{hemi}",
             space = "MNI152NLin2009cAsym",
             den = "{density}",
             suffix = "correlationmatrix.npy",
-            **config["subj_wildcards"]
-        ),
+            **subj_wildcards
+            ),
         affinity_matrix = bids(
             root = "results",
             datatype = "func",
+            task = '{task}',
             hemi = "{hemi}",
             space = "MNI152NLin2009cAsym",
             den = "{density}",
             suffix = "affinitymatrix.npy",
-            **config["subj_wildcards"]
-        )
+            **subj_wildcards
+            )
     threads: 8
     resources:
         mem_mb = 16000,
         time = 30
-    group: 'subj'
+    group: 'postfmriclean_subj'
     script: '../scripts/calculate_affinity_matrix.py'
 
 rule calculate_average_gradients:
@@ -91,34 +96,38 @@ rule calculate_average_gradients:
         affinity_matrix = expand(bids(
             root = "results",
             datatype = "func",
+            task = '{{task}}',
             hemi = "{{hemi}}",
             space = "MNI152NLin2009cAsym",
             den = "{{density}}",
             suffix = "affinitymatrix.npy",
-            **config["subj_wildcards"]),
-            subject = config['input_lists']['reverse_transform']['subject'],
-        )
+            **subj_wildcards),
+            subject = fmri_input_list['subject']
+            )
     output:
         gradient_maps = bids(
             root = "results",
             datatype = "group",
             prefix = 'sub_avg',
+            task = '{task}',
             hemi = "{hemi}",
             space = "MNI152NLin2009cAsym",
             den = "{density}",
-            suffix = "gradients.func.gii"),
-        
+            suffix = "gradients.func.gii"
+            ),
         affinity_matrix = bids(
             root = "results",
             datatype = "group",
             prefix = "sub_avg",
+            task = '{task}',
             hemi = "{hemi}",
             space = "MNI152NLin2009cAsym",
             den = "{density}",
-            suffix = "affinitymatrix.npy")
-
+            suffix = "affinitymatrix.npy"
+            )
     params:
         n_gradients = config['n_gradients']
+
     group: 'calc_gradients'
     script: '../scripts/calculate_average_gradients.py'
 
@@ -127,42 +136,46 @@ rule calculate_aligned_gradients:
         affinity_matrix = bids(
             root = "results",
             datatype = "func",
+            task = '{task}',
             hemi = "{hemi}",
             space = "MNI152NLin2009cAsym",
             den = "{density}",
             suffix = "affinitymatrix.npy",
-            **config["subj_wildcards"]),
-
+            **subj_wildcards
+            ),
         avg_affinity_matrix = bids(
             root = "results",
             datatype = "group",
             prefix = "sub_avg",
+            task = '{task}',
             hemi = "{hemi}",
             space = "MNI152NLin2009cAsym",
             den = "{density}",
-            suffix = "affinitymatrix.npy",
-        ),
+            suffix = "affinitymatrix.npy"
+            ),
     output:
         gradient_maps = bids(
             root = "results",
             datatype = "func",
+            task = '{task}',
             hemi = "{hemi}",
             space = "MNI152NLin2009cAsym",
-            density = "{density}",
+            den = "{density}",
             desc = "aligned",
             suffix = "gradients.func.gii",
-            **config["subj_wildcards"]
-        ),
+            **subj_wildcards
+            ),
         gradient_unaligned = bids(
             root = "results",
             datatype = "func",
+            task =  '{task}',
             hemi = "{hemi}",
             space = "MNI152NLin2009cAsym",
-            density = "{density}",
+            den = "{density}",
             desc = "unaligned",
             suffix = "gradients.func.gii",
-            **config["subj_wildcards"]
-        )
+            **subj_wildcards
+            )
     params:
         n_gradients = config['n_gradients']
     group: 'calc_gradients'
@@ -170,46 +183,33 @@ rule calculate_aligned_gradients:
 
 rule set_func_structure:
     input:
-        # surf = bids(
-        #     root = "results",
-        #     datatype = "anat",
-        #     hemi = "{hemi}",
-        #     space = "MNI152NLin2009cAsym",
-        #     den = "{density}",
-        #     desc = "nancorrect",
-        #     suffix = "midthickness.surf.gii",
-        #     **config["subj_wildcards"]
-        # ),
-        gradient_maps = expand(bids(
+        gradient_maps = bids(
             root = "results",
             datatype = "func",
+            task = '{task}',
             hemi = "{hemi}",
             space = "MNI152NLin2009cAsym",
-            density = "{density}",
+            den = "{density}",
             desc = "aligned",
             suffix = "gradients.func.gii",
-            **config["subj_wildcards"]
-        )
+            **subj_wildcards
+            )
     params:
         structure = "CORTEX_LEFT" if "{hemi}" == "L" else "CORTEX_RIGHT"
     output:
         check = bids(
             root = "work",
             datatype = "func",
+            task =  '{task}',
             hemi = "{hemi}",
             den = "{density}",
             suffix = "func.done",
-            **config['subj_wildcards']
-        ),
+            **subj_wildcards
+            ),
     container: config['singularity']['autotop']
-    group: 'subj'
+    group: 'calc_gradients'
     shell: 
         """
-        # replace with container
-        # MODULEPATH=/project/6050199/software/transparentsingularity/modules:$MODULEPATH
-        # export MODULEPATH
-
-        # module load connectome-workbench
         wb_command -set-structure {input.gradient_maps} {params.structure} -surface-type ANATOMICAL
         touch {output.check}
         """

@@ -1,79 +1,81 @@
-from scripts.utilities import get_friprep_dir, gen_cohort
-import os
-import pandas as pd
+get_fmriprep_dir = lambda fmri_path:  [ '/'.join(fmri_path.split('/')[0:idx+1]) for idx, item in enumerate(fmri_path.split('/')) if 'fmriprep' in item][0]
 
 rule gen_cohort:
     input:
-        rfmri = config['input_path']['bold_volume'],
+        rfmri = lambda wildcards: fmri_img_list[wildcards.subject]
     params:
-        fmriprep_dir = get_friprep_dir(config['input_path']['bold_volume']), 
-        subject = wildcards.subject,
-        run =  config['input_lists']['bold_volume']['run']  if 'run' in config['input_lists']['bold_volume'] else False,
-        session =  config['input_lists']['bold_volume']['session'] if 'session' in config['input_lists']['bold_volume']['session'] else False
+        fmriprep_path = get_fmriprep_dir(config['input_path']['bold_volume']),
+        # subject = lambda wildcards: wildcards.subject,
+        # run = next(iter([ item.replace('run-','') for item in config['input_path']['bold_volume'].split('/')[-1].split('_') if 'run' in item ])),
+        # run = dict(x.split('-') for x in config['input_path']['bold_volume'].split('/')[-1].split('_') if len(x.split('-')) == 2 )['run'],
+        session = config['input_lists']['bold_volume']['session'] if 'session' in config['input_lists']['bold_volume'].keys() else False
     output:
         cohort = bids(
             root = "work",
-            run = '{run}',
+            datatype = "func",
+            task = '{task}',
             suffix = 'cohort.csv',
-            **config['subj_wildcards']
-        )
-    group: 'subj'
-    run:
-        scan = [wildcards.subject]
-       
-        if params.session != False:
-            scan.append(params.session)
+            **subj_wildcards)
+    group: 'xcpengine_subj'
+    script:
+        '../scripts/gen_cohort.py'
 
-        if params.run != False:
-            scan.append(params.run)
-        
-        scan.append(str(input.rfmri).replace(params.fmriprep_dir,'').strip('/'))
-        
-        gen_cohort_header = lambda cohort_row: [ 'id'+str(count) for count in range(0:len(cohort)-1)].append('img')
-        
-        df_scan = pd.DataFrame([scan], columns = gen_cohort_header(scan))
-        
-        if os.path.exists(output.cohort):
-            df_cohort = pd.read_csv(input.cohort,)
-            df_cohort.append(df_scan).to_csv(output.cohort,index=0)
-        else:
-            df_scan.to_csv(output.cohort,index=0)
-        
 rule run_xcpengine:
     input:
-        rfmri = config['input_path']['bold_volume'],
+        rfmri = lambda wildcards: fmri_img_list[wildcards.subject],
         cohort = bids(
             root = "work",
-            run = '{run}',
+            datatype = "func",
+            task = '{task}',
             suffix = 'cohort.csv',
-            **config['subj_wildcards']
-        )
+            **subj_wildcards),
+        pipeline_design = os.path.join(config['snakemake_dir'], config['fmri_cleaning_design']['36p']) # need to make this more modular depending on cleaning design chosen
     params:
-        fmriprep_dir = get_friprep_dir(config['input_path']['bold_volume']),
-        pipeline_design = '../resources/fc-36p.dsn'
+        fmriprep_dir = get_fmriprep_dir(config['input_path']['bold_volume']),
+        work_dir = "work/xcpengine/",
+        output_dir = "results/xcpengine/"
     output:
-        work_dir = directory(
-            bids(
-                root = "work",
-                dataype = 'xcpengine'
-                **config['subj_wildcards']
-            )
-        ),
-        output_dir = directory(
-            bids(
-                root = "result",
-                dataype = 'xcpengine'
-                **config['subj_wildcards']
-            )
-        )
+        xcp_done = bids(
+            root = "work",
+            datatype = "func",
+            task = "{task}",
+            suffix = "fmriclean.done",
+            **subj_wildcards),
     container: config['singularity']['xcpengine']
-    group: 'subj'
+    group: 'xcpengine_subj'
+    # log: bids(root = 'logs',**config['subj_wildcards'], task = '{task}', suffix = 'fmri_cleaning.txt')
     shell:
         """
-        xcpengine \
-        -d {param.pipeline_design} \
-        -c {input.cohort} \
-        -r {params.fmriprep_dir} \
-        -i {output.work_dir} \
-        -o {output.output_dir}
+        xcpEngine -d {input.pipeline_design} -c {input.cohort} -r {params.fmriprep_dir} -i {params.work_dir} -o {params.output_dir}
+        touch {output.xcp_done}
         """
+
+rule clean_fmri_reorganize:
+    input:
+        xcp_done = expand(bids(
+            root = "work",
+            datatype = "func",
+            task = '{{task}}',
+            suffix = "fmriclean.done",
+            **subj_wildcards),
+            subject = subjects,
+            ),
+        cohort = bids(
+            root = "work",
+            datatype = "func",
+            task = '{task}',
+            suffix = 'cohort.csv',
+            **subj_wildcards)
+    output:
+        fmri =  bids(
+            root = 'results',
+            datatype = 'func',
+            task =  '{task}',
+            desc =  'cleaned',
+            suffix =  'bold.nii.gz',
+            **subj_wildcards),
+    group: 'xcpengine_group'
+    run:
+        input_fmri_path = join('results/xcpengine/', fmri_path_cohort({input.cohort})[0])
+        shutil.copyfile(input_fmri_path, {output.fmri})
+

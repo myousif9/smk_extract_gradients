@@ -1,19 +1,16 @@
-from scripts.utilities import gifti2csv, csv2gifti
-
 rule correct_nan_vertices:
     input: 
-        # surf = join(config['hippunfold_dir'],'results/sub-{subject}/surf_T1w/sub-{subject}_hemi-{hemi}_space-T1w_den-{density}_midthickness.surf.gii')
-        surf = bids(
-            root = join(config['hippunfold_dir'],'results'),
-            datatype = "surf_T1w",
-            hemi = "{hemi}",
-            space = "T1w",
-            den = "{density}",
-            suffix = "midthickness.surf.gii",
-            **config["subj_wildcards"]
-        ),
+        surf = lambda wildcards: hippunfold_surf_list[wildcards.subject]
+        # surf = bids(
+        #     root = join(config['hippunfold_dir'],'results'),
+        #     datatype = "surf_T1w",
+        #     hemi = "{hemi}",
+        #     space = "T1w",
+        #     den = "{density}",
+        #     suffix = "midthickness.surf.gii",
+        #     **subj_wildcards
+        # ),
     output:
-        # surf = 'deriv/post_hippunfold/sub-{subject}/surf_T1w/sub-{subject}_hemi-{hemi}_space-T1w_den-{density}_desc-nancorrect_midthickness.surf.gii'
         surf = bids(
             root = "results",
             datatype = "anat",
@@ -22,14 +19,13 @@ rule correct_nan_vertices:
             den = "{density}",
             desc = "nancorrect",
             suffix = "midthickness.surf.gii",
-            **config["subj_wildcards"]
+            **subj_wildcards
         ),
-    group: 'subj'
+    group: 'struct_subj'
     script: '../scripts/fix_nan_vertices.py'
 
 rule gifti2csv:
     input:
-        # surf = 'deriv/post_hippunfold/sub-{subject}/surf_T1w/sub-{subject}_hemi-{hemi}_space-T1w_den-{density}_desc-nancorrect_midthickness.surf.gii',
         surf = bids(
             root = "results",
             datatype = "anat",
@@ -38,7 +34,7 @@ rule gifti2csv:
             den = "{density}",
             desc = "nancorrect",
             suffix = "midthickness.surf.gii",
-            **config["subj_wildcards"]
+            **subj_wildcards
         ),
     output:
         surf = bids(
@@ -49,9 +45,9 @@ rule gifti2csv:
             den = "{density}",
             desc = "nancorrect",
             suffix = "midthickness.surfpoints.csv",
-            **config["subj_wildcards"]
+            **subj_wildcards
         ),
-    group: 'subj'
+    group: 'struct_subj'
     run:
         gifti2csv(input.surf,output.surf)
 
@@ -66,7 +62,7 @@ rule apply_transform:
             den = "{density}",
             desc = "nancorrect",
             suffix = "midthickness.surfpoints.csv",
-            **config["subj_wildcards"]
+            **subj_wildcards
         ),
     output:
         surf = bids(
@@ -77,10 +73,10 @@ rule apply_transform:
             den = "{density}",
             desc = "nancorrect",
             suffix = "midthickness.surfpoints.csv",
-            **config["subj_wildcards"]
+            **subj_wildcards
         ),
     container: config['singularity']['ants']
-    group: 'subj'
+    group: 'struct_subj'
     shell:
         """ 
         # replace with container
@@ -101,7 +97,7 @@ rule csv2gifti:
             den = "{density}",
             desc = "nancorrect",
             suffix = "midthickness.surfpoints.csv",
-            **config["subj_wildcards"]
+            **subj_wildcards
         ),
         surf_gii = bids(
             root = "results",
@@ -111,7 +107,7 @@ rule csv2gifti:
             den = "{density}",
             desc = "nancorrect",
             suffix = "midthickness.surf.gii",
-            **config["subj_wildcards"]
+            **subj_wildcards
         ),
     output:
         surf = bids(
@@ -122,9 +118,9 @@ rule csv2gifti:
             den = "{density}",
             desc = "nancorrect",
             suffix = "midthickness.surf.gii",
-            **config["subj_wildcards"]
+            **subj_wildcards
         ),
-    group: 'subj'
+    group: 'struct_subj'
     run:
         csv2gifti(input.surf_csv, input.surf_gii, output.surf)
 
@@ -138,7 +134,7 @@ rule set_surf_structure:
             den = "{density}",
             desc = "nancorrect",
             suffix = "midthickness.surf.gii",
-            **config["subj_wildcards"]
+            **subj_wildcards
         ),
     params:
         structure = "CORTEX_LEFT" if "{hemi}" == "L" else "CORTEX_RIGHT"
@@ -149,10 +145,10 @@ rule set_surf_structure:
             hemi = "{hemi}",
             den = "{density}",
             suffix = "structure.done",
-            **config['subj_wildcards']
+            **subj_wildcards
         ),
     container: config['singularity']['autotop']
-    group: 'subj'
+    group: 'struct_subj'
     shell: 
         """
         # replace with container

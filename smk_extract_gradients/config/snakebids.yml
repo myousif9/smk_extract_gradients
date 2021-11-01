@@ -22,22 +22,6 @@ targets_by_analysis_level:
 #    https://bids-standard.github.io/pybids/generated/bids.layout.BIDSLayout.html#bids.layout.BIDSLayout.get
 
 pybids_inputs:
-  forward_transform:
-      filters:
-        suffix: 'xfm'
-        extension: '.h5'
-        datatype: 'anat'
-        scope: 'derivatives'
-        from: 'T1w'
-        to: 'MNI152NLin2009cAsym'
-        invalid_filters: 'allow'
-      wildcards:
-        - subject
-        - session
-        - acquisition
-        - task
-        - run
-
   reverse_transform:
       filters:
         suffix: 'xfm'
@@ -60,22 +44,8 @@ pybids_inputs:
       extension: '.nii.gz'
       datatype: 'func'
       scope: 'derivatives'
-      task: 'rest'
       space: 'MNI152NLin2009cAsym'
-      invalid_filters: 'allow'
-    wildcards:
-        - subject
-        - session
-        - acquisition
-        - task
-        - run
-    
-  bold_surface:
-    filters:
-      suffix: 'bold'
-      extension: '.dtseries.nii'
-      task: 'rest'
-      space: 'fsLR'
+      desc: 'preproc'
       invalid_filters: 'allow'
     wildcards:
         - subject
@@ -158,6 +128,12 @@ parse_args:
       - R
     nargs: '+'
     required: False
+  
+  --task:
+    help: Define task event for fMRI acquision.
+    default: rest
+    nargs: '+'
+    required: False
 
   #refernce gradient flag
   --reference_gradient:
@@ -169,13 +145,15 @@ parse_args:
 
 n_gradients: 10
 
-singularity:
-    ants: 'docker://kaczmarj/ants:2.3.4'
-    autotop: 'docker://khanlab/autotop_deps:nighres'
-    xcpengine: 'docker://pennbbl/xcpengine:1.2.4'
-
 # singularity:
-#     ants: '/scratch/myousif9/containers/ants_2.3.4.sif'
-#     autotop: '/scratch/myousif9/containers/autotop_deps_nighres.sif'
-#     xcpengine: '/project/ctb-akhanf/rhaast/01_Software/singularity/pennbbl_xcpengine_latest.sif'
-    
+#     ants: 'docker://kaczmarj/ants:2.3.4'
+#     autotop: 'docker://khanlab/autotop_deps:nighres'
+#     xcpengine: 'docker://pennbbl/xcpengine:1.2.4'
+
+singularity:
+    ants: '/scratch/myousif9/containers/ants_2.3.4.sif'
+    autotop: '/scratch/myousif9/containers/autotop_deps_nighres.sif'
+    xcpengine: '/project/ctb-akhanf/rhaast/01_Software/singularity/pennbbl_xcpengine_latest.sif'
+
+fmri_cleaning_design:
+  36p: resources/fc-36p.dsn

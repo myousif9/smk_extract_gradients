@@ -55,40 +55,44 @@ density = snakemake.wildcards.density
 
 # Load hippocampal rfMRI data
 rfmri_hipp_file = snakemake.input.rfmri_hipp
-rfmri_hipp_gii  = nib.load(rfmri_hipp_file)
+rfmri_ctx_file  = snakemake.params.rfmri_ctx
+affinity_matrix_output = snakemake.output.affinity_matrix
 
-rfmri_hipp_data_rest = np.zeros((len(rfmri_hipp_gii.darrays[0].data),len(rfmri_hipp_gii.darrays)))
+def compute_affinity_matrix(subject, hemi, density, rfmri_hipp_file, rfmri_ctx_file, affinity_matrix_output):
+  rfmri_hipp_gii  = nib.load(rfmri_hipp_file)
+  rfmri_hipp_data_rest = np.zeros((len(rfmri_hipp_gii.darrays[0].data),len(rfmri_hipp_gii.darrays)))
 
-for i in range(0,len(rfmri_hipp_gii.darrays)):
-    rfmri_hipp_data_rest[:,i] = rfmri_hipp_gii.darrays[i].data
+  for i in range(0,len(rfmri_hipp_gii.darrays)):
+      rfmri_hipp_data_rest[:,i] = rfmri_hipp_gii.darrays[i].data
 
-# for r, run in enumerate(snakemake.input.rfmri_ctx):
-rfmri_ctx_file  = snakemake.input.rfmri_ctx
-rfmri_ctx_data_rest = pull_data(rfmri_ctx_file,'cortex')
-# if r == 0:
-#     rfmri_ctx_data_rest = pull_data(rfmri_ctx_file,'cortex')
-# else:
-#     rfmri_ctx_data_rest = np.hstack((rfmri_ctx_data_rest,pull_data(rfmri_ctx_file,'cortex')))
-        
-# Compute hipp vertex-wise correlation matrix first
-print(rfmri_hipp_data_rest.shape)
-print(rfmri_ctx_data_rest.shape)
+  # for r, run in enumerate(snakemake.input.rfmri_ctx):
+  
+  rfmri_ctx_data_rest = pull_data(rfmri_ctx_file,'cortex')
+  # if r == 0:
+  #     rfmri_ctx_data_rest = pull_data(rfmri_ctx_file,'cortex')
+  # else:
+  #     rfmri_ctx_data_rest = np.hstack((rfmri_ctx_data_rest,pull_data(rfmri_ctx_file,'cortex')))
+          
+  # Compute hipp vertex-wise correlation matrix first
+  print(rfmri_hipp_data_rest.shape)
+  print(rfmri_ctx_data_rest.shape)
 
-correlation_matrix = generate_correlation_map(rfmri_hipp_data_rest,rfmri_ctx_data_rest)
-correlation_matrix = np.nan_to_num(correlation_matrix)
+  correlation_matrix = generate_correlation_map(rfmri_hipp_data_rest,rfmri_ctx_data_rest)
+  correlation_matrix = np.nan_to_num(correlation_matrix)
 
-# Save to npy file
-np.save(snakemake.output.correlation_matrix, correlation_matrix)
+  # Save to npy file
+  np.save(snakemake.output.correlation_matrix, correlation_matrix)
 
-# Transform correlation matrix to cosine similarity and then normalized angle matrix
-dist_upper        = pdist(correlation_matrix,'cosine')
-cosine_similarity = 1-squareform(dist_upper)
-cosine_similarity = np.nan_to_num(cosine_similarity)
-norm_angle_matrix = 1-(np.arccos(cosine_similarity)/math.pi)
+  # Transform correlation matrix to cosine similarity and then normalized angle matrix
+  dist_upper        = pdist(correlation_matrix,'cosine')
+  cosine_similarity = 1-squareform(dist_upper)
+  cosine_similarity = np.nan_to_num(cosine_similarity)
+  norm_angle_matrix = 1-(np.arccos(cosine_similarity)/math.pi)
 
-# Save to npy file
-np.save(snakemake.output.affinity_matrix, norm_angle_matrix)
+  # Save to npy file
+  np.save(affinity_matrix_output, norm_angle_matrix)
 
+compute_affinity_matrix(subject, hemi, density, rfmri_hipp_file, rfmri_ctx_file, affinity_matrix_output)
 # # Calculate gradients based on normalized angle matrix
 # # Kernel = none as input matrix is already affinity matrix
 # gm = GradientMaps(n_components=snakemake.params.n_gradients, kernel=None, random_state=0)

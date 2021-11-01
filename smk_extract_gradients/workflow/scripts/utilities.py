@@ -51,35 +51,55 @@ def csv2gifti(csv_file, gii_file, out_file, itk_lps = True):
     
     new_gii.to_filename(out_file)
 
-def get_fmriprep_dir(fmri_path):
-    fmri_path_list = fmri_path.split('/')
-    
-    for idx, path_item in enumerate(fmri_path_list):
-        if 'fmriprep' == path_item.strip():
-            return '/'.join(fmri_path_list[0:idx])
+def fmri_path_cohort(cohort_path):
+    df = pd.read_csv(cohort_path)
 
-def gen_cohort(fmri_path,fmriprep_dir,output_file,wildcards):
-    
-    cohort_dict = {}
-    
-    for idx, wildcard in enumerate(wildcards.values()):
-        if 'subject' in wildcard:
-            cohort_col = len(cohort_dict.values())
-            cohort_dict['id'+str(cohort_col)] = [wildcards['subject']]
-        elif 'ses' in wildcard:
-            cohort_col = len(cohort_col) + 1
-            cohort_dict['id'+str(cohort_col)] = [wildcards['ses']]
-        elif 'run' in wildcard:
-            cohort_col = len(cohort_col) + 1
-            cohort_dict['id'+str(cohort_col)] = [wildcards['run']]
-    
-    cohort_dict['img'] = fmri_path.replace(fmriprep_dir,'').strip('/')
+    path = []
+    for idx, item in enumerate([ x for x in df.columns.to_list() if 'id' in x]):
+        item_list = df[item].to_list()
+        run = 0
+        ses = 0
+        if 'run' in item_list[0]:
+            run = item_list[np.argmax([int(item.replace('run-', '')) for item in item_list])]
+            path.append(run)
+        else:
+            path.append(item_list[idx])
 
-    cohort_df = pd.Dataframe.from_dict(cohort_dict)
+    root = '/'.join(path)
+    file_prefix = '_'.join(path)  
+    file_vol =  file_prefix + '_residualized.nii.gz'
+    file_surf =  file_prefix + '_residualized_space-fsLR_den-91k_bold.dtseries.nii'
+    return os.path.join(root, 'regress', file_vol), os.path.join(root, 'regress', file_surf)
 
-    if os.path.exists(cohort_df) == False:
-        cohort_df.to_csv(output_file, index=0)
-    else:
-        old_cohort_df =  pd.read_csv(output_file)
-        pd.concat([old_cohort_df,cohort_df]).to_csv(output_file, index = 0)
+# def get_fmriprep_dir(fmri_path):
+#     fmri_path_list = fmri_path.split('/')
+    
+#     for idx, path_item in enumerate(fmri_path_list):
+#         if 'fmriprep' == path_item.strip():
+#             return '/'.join(fmri_path_list[0:idx])
+
+# def gen_cohort(fmri_path,fmriprep_dir,output_file,wildcards):
+    
+#     cohort_dict = {}
+    
+#     for idx, wildcard in enumerate(wildcards.values()):
+#         if 'subject' in wildcard:
+#             cohort_col = len(cohort_dict.values())
+#             cohort_dict['id'+str(cohort_col)] = [wildcards['subject']]
+#         elif 'ses' in wildcard:
+#             cohort_col = len(cohort_col) + 1
+#             cohort_dict['id'+str(cohort_col)] = [wildcards['ses']]
+#         elif 'run' in wildcard:
+#             cohort_col = len(cohort_col) + 1
+#             cohort_dict['id'+str(cohort_col)] = [wildcards['run']]
+    
+#     cohort_dict['img'] = fmri_path.replace(fmriprep_dir,'').strip('/')
+
+#     cohort_df = pd.Dataframe.from_dict(cohort_dict)
+
+#     if os.path.exists(cohort_df) == False:
+#         cohort_df.to_csv(output_file, index=0)
+#     else:
+#         old_cohort_df =  pd.read_csv(output_file)
+#         pd.concat([old_cohort_df,cohort_df]).to_csv(output_file, index = 0)
 
