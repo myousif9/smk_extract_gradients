@@ -43,6 +43,7 @@ rule map_rfmri_hippunfold_surface:
     resources:
         mem_mb = 16000,
         time = 60    
+    log: bids(root = 'logs',**subj_wildcards, task = '{task}', hemi = '{hemi}', den = '{density}', suffix = 'map-rfmri-hippunfold-surface.txt')
     shell:
         """
         wb_command -volume-to-surface-mapping {input.fmri} {input.surf} {output.rfmri} -trilinear
@@ -89,6 +90,7 @@ rule calculate_affinity_matrix:
         mem_mb = 16000,
         time = 30
     group: 'postfmriclean_subj'
+    log: bids(root = 'logs',**subj_wildcards, task = '{task}', hemi = '{hemi}', den = '{density}', suffix = 'calculate-affinity-matrix.txt')
     script: '../scripts/calculate_affinity_matrix.py'
 
 rule calculate_average_gradients:
@@ -129,6 +131,7 @@ rule calculate_average_gradients:
         n_gradients = config['n_gradients']
 
     group: 'calc_gradients'
+    log: bids(root = 'logs',**subj_wildcards, task = '{task}', hemi = '{hemi}', den = '{density}', suffix = 'calculate-average-gradients.txt')
     script: '../scripts/calculate_average_gradients.py'
 
 rule calculate_aligned_gradients:
@@ -179,6 +182,7 @@ rule calculate_aligned_gradients:
     params:
         n_gradients = config['n_gradients']
     group: 'calc_gradients'
+    log: bids(root = 'logs',**subj_wildcards, task = '{task}', hemi = '{hemi}', den = '{density}', suffix = 'calculate-aligned-gradients.txt')
     script: '../scripts/calculate_aligned_gradients.py'
 
 rule set_func_structure:
@@ -208,6 +212,7 @@ rule set_func_structure:
             ),
     container: config['singularity']['autotop']
     group: 'calc_gradients'
+    log: bids(root = 'logs',**subj_wildcards, task = '{task}', hemi = '{hemi}', den = '{density}', suffix = 'set-func-structure.txt')
     shell: 
         """
         wb_command -set-structure {input.gradient_maps} {params.structure} -surface-type ANATOMICAL

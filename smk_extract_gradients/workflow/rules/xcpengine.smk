@@ -17,6 +17,7 @@ rule gen_cohort:
             suffix = 'cohort.csv',
             **subj_wildcards)
     group: 'xcpengine_subj'
+    log: bids(root = 'logs',**subj_wildcards, task = '{task}', suffix = 'gen_cohort.txt')
     script:
         '../scripts/gen_cohort.py'
 
@@ -43,7 +44,10 @@ rule run_xcpengine:
             **subj_wildcards),
     container: config['singularity']['xcpengine']
     group: 'xcpengine_subj'
-    # log: bids(root = 'logs',**config['subj_wildcards'], task = '{task}', suffix = 'fmri_cleaning.txt')
+    resources:
+        mem_mb = 32000,
+        time = 120
+    log: bids(root = 'logs',**subj_wildcards, task = '{task}', suffix = 'fmri_cleaning.txt')
     shell:
         """
         xcpEngine -d {input.pipeline_design} -c {input.cohort} -r {params.fmriprep_dir} -i {params.work_dir} -o {params.output_dir}
@@ -75,6 +79,7 @@ rule clean_fmri_reorganize:
             suffix =  'bold.nii.gz',
             **subj_wildcards),
     group: 'xcpengine_group'
+    log: bids(root = 'logs',**subj_wildcards, task = '{task}', suffix = 'clean_fmri_reorganize.txt')
     run:
         input_fmri_path = join('results/xcpengine/', fmri_path_cohort({input.cohort})[0])
         shutil.copyfile(input_fmri_path, {output.fmri})
