@@ -55,11 +55,6 @@ rule apply_transform:
     log: bids(root = 'logs',**subj_wildcards, hemi = '{hemi}', den = '{density}', suffix = 'apply_transform.txt')
     shell:
         """ 
-        # replace with container
-        # module load StdEnv/2020
-        # module load gcc/9.3.0 
-        # module load ants/2.3.5
-
         antsApplyTransformsToPoints -d 3 -i {input.surf} -o {output.surf} -t {input.rvr_transform}
         """
 
@@ -102,11 +97,6 @@ rule set_surf_structure:
     log: bids(root = 'logs',**subj_wildcards, hemi = '{hemi}', den = '{density}', suffix = 'set_surf_structure.txt')
     shell: 
         """
-        # replace with container
-        # MODULEPATH=/project/6050199/software/transparentsingularity/modules:$MODULEPATH
-        # export MODULEPATH
-
-        # module load connectome-workbench
         wb_command -set-structure {input.surf} {params.structure} -surface-type ANATOMICAL
         touch {output.check}
         """
