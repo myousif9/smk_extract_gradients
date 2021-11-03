@@ -55,7 +55,7 @@ density = snakemake.wildcards.density
 
 # Load hippocampal rfMRI data
 rfmri_hipp_file = snakemake.input.rfmri_hipp
-rfmri_ctx_file  = snakemake.params.rfmri_ctx
+rfmri_ctx_file  = snakemake.input.rfmri_ctx
 affinity_matrix_output = snakemake.output.affinity_matrix
 
 def compute_affinity_matrix(subject, hemi, density, rfmri_hipp_file, rfmri_ctx_file, affinity_matrix_output):

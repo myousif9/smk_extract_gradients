@@ -5,9 +5,7 @@ rule gen_cohort:
         rfmri = lambda wildcards: fmri_img_list[wildcards.subject]
     params:
         fmriprep_path = get_fmriprep_dir(config['input_path']['bold_volume']),
-        # subject = lambda wildcards: wildcards.subject,
-        # run = next(iter([ item.replace('run-','') for item in config['input_path']['bold_volume'].split('/')[-1].split('_') if 'run' in item ])),
-        # run = dict(x.split('-') for x in config['input_path']['bold_volume'].split('/')[-1].split('_') if len(x.split('-')) == 2 )['run'],
+        # multiple sessions will become point of error, need new solution for this
         session = config['input_lists']['bold_volume']['session'] if 'session' in config['input_lists']['bold_volume'].keys() else False
     output:
         cohort = bids(
@@ -25,12 +23,6 @@ rule run_xcpengine:
     input:
         rfmri = lambda wildcards: fmri_img_list[wildcards.subject],
         cohort = rules.gen_cohort.output.cohort,
-        # bids(
-        #     root = "work",
-        #     datatype = "func",
-        #     task = '{task}',
-        #     suffix = 'cohort.csv',
-        #     **subj_wildcards),
         pipeline_design = os.path.join(config['snakemake_dir'], config['fmri_cleaning_design']['36p']) # need to make this more modular depending on cleaning design chosen
     params:
         fmriprep_dir = get_fmriprep_dir(config['input_path']['bold_volume']),
@@ -67,16 +59,27 @@ rule clean_fmri_reorganize:
             ),
         cohort = rules.gen_cohort.output.cohort
     output:
-        fmri =  bids(
+        fmri_volume =  bids(
             root = 'results',
             datatype = 'func',
             task =  '{task}',
             desc =  'cleaned',
             suffix =  'bold.nii.gz',
-            **subj_wildcards),
+            **subj_wildcards
+            ),
+        fmri_surf =  bids(
+            root = 'results',
+            datatype = 'func',
+            task =  '{task}',
+            desc =  'cleaned',
+            suffix =  'bold.surf.gii',
+            **subj_wildcards
+            ),
     group: 'xcpengine_group'
     log: bids(root = 'logs',**subj_wildcards, task = '{task}', suffix = 'clean_fmri_reorganize.txt')
     run:
-        input_fmri_path = join('results/xcpengine/', fmri_path_cohort({input.cohort})[0])
-        shutil.copyfile(input_fmri_path, {output.fmri})
-
+        cohort_path = fmri_path_cohort({input.cohort})
+        fmri_volume_path = join('results/xcpengine/', cohort_path[0])
+        fmri_surf_path = join('results/xcpengine/', cohort_path[1])
+        shutil.copyfile(fmri_volume_path, {output.fmri_volume})
+        shutil.copyfile(fmri_surf_path, {output.fmri_surf})

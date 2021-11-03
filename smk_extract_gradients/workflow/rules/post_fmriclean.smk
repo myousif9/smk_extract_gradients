@@ -2,7 +2,7 @@ rule map_rfmri_hippunfold_surface:
     input:
         check_struct = rules.set_surf_structure.output.check,
         surf = rules.csv2gifti.output.surf,
-        fmri = rules.clean_fmri_reorganize.output.fmri
+        fmri = rules.clean_fmri_reorganize.output.fmri_volume
     output:
         rfmri = bids(
             root = "results",
@@ -28,10 +28,11 @@ rule map_rfmri_hippunfold_surface:
 
 rule calculate_affinity_matrix:
     input:
-        rfmri_hipp = rules.map_rfmri_hippunfold_surface.output.rfmri
+        rfmri_hipp = rules.map_rfmri_hippunfold_surface.output.rfmri,
+        rfmri_ctx = rules.clean_fmri_reorganize.output.fmri_surf
     params:
         n_gradients = config['n_gradients'],
-        rfmri_ctx = lambda wildcards: join('results/xcpengine/', fmri_path_cohort( input.fmri_cohort_path )[1])
+        # rfmri_ctx = lambda wildcards: join('results/xcpengine/', fmri_path_cohort( input.fmri_cohort_path )[1])
     output:
         correlation_matrix = bids(
             root = "results",
@@ -73,7 +74,7 @@ rule calculate_average_gradients:
             suffix = "affinitymatrix.npy",
             **subj_wildcards),
             subject = fmri_input_list['subject']
-            )
+            ),
     output:
         gradient_maps = bids(
             root = "results",
@@ -94,7 +95,7 @@ rule calculate_average_gradients:
             space = "MNI152NLin2009cAsym",
             den = "{density}",
             suffix = "affinitymatrix.npy"
-            )
+            ),
     params:
         n_gradients = config['n_gradients']
 
@@ -105,7 +106,7 @@ rule calculate_average_gradients:
 rule calculate_aligned_gradients:
     input:
         affinity_matrix = rules.calculate_affinity_matrix.output.affinity_matrix,
-        avg_affinity_matrix = rules.calculate_average_gradients.output.affinity_matrix
+        avg_affinity_matrix = rules.calculate_average_gradients.output.affinity_matrix,
     output:
         gradient_maps = bids(
             root = "results",
@@ -128,7 +129,7 @@ rule calculate_aligned_gradients:
             desc = "unaligned",
             suffix = "gradients.func.gii",
             **subj_wildcards
-            )
+            ),
     params:
         n_gradients = config['n_gradients']
     group: 'calc_gradients'
@@ -137,7 +138,7 @@ rule calculate_aligned_gradients:
 
 rule set_func_structure:
     input:
-        gradient_maps = rules.calculate_aligned_gradients.output.gradient_maps
+        gradient_maps = rules.calculate_aligned_gradients.output.gradient_maps,
     params:
         structure = "CORTEX_LEFT" if "{hemi}" == "L" else "CORTEX_RIGHT"
     output:
