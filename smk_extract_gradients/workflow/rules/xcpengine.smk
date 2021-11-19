@@ -2,9 +2,9 @@ get_fmriprep_dir = lambda fmri_path:  [ '/'.join(fmri_path.split('/')[0:idx+1]) 
 
 rule gen_cohort:
     input:
-        rfmri = lambda wildcards: fmri_img_list[wildcards.subject]
+        rfmri = lambda wildcards: fmri_img_dict[wildcards.subject]
     params:
-        fmriprep_path = get_fmriprep_dir(config['input_path']['bold_volume']),
+        fmriprep_path = get_fmriprep_dir(config['input_path']['bold_volume']) if config['fmriprep_dir'] == None else config['fmriprep_dir'],
         # multiple sessions will become point of error, need new solution for this
         session = config['input_lists']['bold_volume']['session'] if 'session' in config['input_lists']['bold_volume'].keys() else False
     output:
@@ -21,11 +21,11 @@ rule gen_cohort:
 
 rule run_xcpengine:
     input:
-        rfmri = lambda wildcards: fmri_img_list[wildcards.subject],
+        rfmri = lambda wildcards: fmri_img_dict[wildcards.subject],
         cohort = rules.gen_cohort.output.cohort,
         pipeline_design = os.path.join(config['snakemake_dir'], config['fmri_cleaning_design']['36p']) # need to make this more modular depending on cleaning design chosen
     params:
-        fmriprep_dir = get_fmriprep_dir(config['input_path']['bold_volume']),
+        fmriprep_dir = get_fmriprep_dir(config['input_path']['bold_volume']) if config['fmriprep_dir'] == None else config['fmriprep_dir'],
         work_dir = "work/xcpengine/",
         output_dir = "results/xcpengine/"
     output:
@@ -39,7 +39,7 @@ rule run_xcpengine:
     group: 'xcpengine_subj'
     resources:
         mem_mb = 32000,
-        time = 480
+        time = 600
     log: bids(root = 'logs',**subj_wildcards, task = '{task}', suffix = 'fmri_cleaning.txt')
     shell:
         """

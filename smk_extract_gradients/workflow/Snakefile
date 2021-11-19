@@ -14,17 +14,42 @@ from scripts.utilities import gifti2csv, csv2gifti, fmri_path_cohort
 
 configfile: 'config/snakebids.yml'
 
-#writes inputs_config.yml and updates config dict
-config.update(
-    snakebids.generate_inputs(
-        bids_dir=config["bids_dir"],
-        pybids_inputs=config["pybids_inputs"],
-        derivatives=config["derivatives"],
-        participant_label=config["participant_label"],
-        exclude_participant_label=config["exclude_participant_label"]
-    )
-)
 
+pybids_fmriprep = { k:v for k,v in config['pybids_inputs'].items() if k in ['bold_volume','reverse_transform']}
+# pybids_hippunfold = { k:v for k,v in config['pybids_inputs'].items() if k == 'surf'}
+# pybids_hippunfold['surf']['filters']['space'] = config['hippunfold_space']
+
+if config['fmriprep_dir'] != None:
+    config.update(
+        snakebids.generate_inputs(
+            bids_dir=config["bids_dir"],
+            pybids_inputs=pybids_fmriprep,
+            derivatives=config['fmriprep_dir'],
+            participant_label=config["participant_label"],
+            exclude_participant_label=config["exclude_participant_label"]
+        )
+    )
+
+else:
+    config.update(
+        snakebids.generate_inputs(
+            bids_dir=config['bids_dir'],
+            pybids_inputs=pybids_fmriprep,
+            derivatives=config["derivatives"],
+            participant_label=config["participant_label"],
+            exclude_participant_label=config["exclude_participant_label"]
+        )
+    )
+
+# config.update(
+#     snakebids.generate_inputs(
+#         bids_dir=config['bids_dir'],
+#         pybids_inputs=pybids_hippunfold,
+#         derivatives=join(config['hippunfold_dir'],'results') if 'results' not in config['hippunfold_dir'] else config['hippunfold_dir'],
+#         participant_label=config["participant_label"],
+#         exclude_participant_label=config["exclude_participant_label"]
+#     )
+# )
 
 #this adds constraints to the bids naming
 wildcard_constraints:  **snakebids.get_wildcard_constraints(\
@@ -35,6 +60,7 @@ wildcard_constraints:  **snakebids.get_wildcard_constraints(\
 
 config['input_lists']['bold_volume']['task'] = config['task']
 
+
 # defining wildcards variables
 subj_wildcards = config["subj_wildcards"]
 fmri_wildcards = config['input_wildcards']['bold_volume']
@@ -44,33 +70,75 @@ transform_wildcards = config['input_wildcards']['reverse_transform']
 fmri_input_list = config['input_lists']['bold_volume']
 transform_input_list = config['input_lists']['reverse_transform']
 
-# parsing bids dataset to retain scans with the highest numbered run
-# ***ADD FLAG FOR CHOOSING RUN NUMBER OR PROVIDING DICT OR CSV TO SPECIFY RUN ***
-layout = BIDSLayout(config['bids_dir'], derivatives = True, validate = False)
+# defining variables for image zip lists
+bold_zip = config['input_zip_lists']['bold_volume']
+# hippunfold_zip = config['input_zip_lists']['surf']
 
-# obtaining fmriprep processed bold images
-bold_images = layout.get(task = config['task'], space = 'MNI152NLin2009cAsym', suffix = 'bold', extension = '.nii.gz' )
+subjects_bold = bold_zip['subject']
+task_bold = bold_zip['task']
+
+bold_sub_task_getter = itemgetter(*[ idx for idx, task in enumerate(task_bold) if config['task'] == task])
+subjects_bold = bold_sub_task_getter(subjects_bold)
+
+def match_getter(match, match_list, item_list):
+    idx_list  = [ idx for idx, item in enumerate(match_list) if match == item ]
+    getter = itemgetter(*idx_list)
+    return list(getter(item_list))
+
+fmri_img_dict = {}
+
+if 'run' in bold_zip.keys():
+    runs_bold = bold_zip['run']
+    runs_bold = bold_sub_task_getter(runs_bold)
+
+    # {sub:int(match_getter(sub,subjects_bold,runs)[np.argmax(np.array(match_getter(sub,subjects_bold,runs)).astype(np.int8))])} 
+    bold_run_dict_list = []
+
+    for sub_bold in list(set(subjects_bold)):
+        run_match = match_getter(sub_bold,subjects_bold,runs_bold)
+        run_match_array = np.array(run_match).astype(np.int8)
+
+        if run_match_array.size != 1:
+            sub_run_dict =  {sub_bold:int(run_match[np.argmax(run_match_array)])}
+        else:
+            sub_run_dict = {sub_bold:int(run_match_array[0])} 
+
+        bold_run_dict_list.append(sub_run_dict)
+
+    # bold_run_dict_list = [ {sub:int(match_getter(sub,subjects_bold,runs)[np.argmax(np.array(match_getter(sub,subjects_bold,runs)).astype(np.int8))])} if np.array(match_getter(sub,subjects_bold,runs)).size != 1 else {sub:int(np.array(match_getter(sub,subjects,runs)).astype(np.int8)[0])} for sub in list(set(subjects_bold)) ]
+
+    bold_sub_run = {}
+    for sub_dict in bold_run_dict_list:
+        bold_sub_run.update(sub_dict)
+    
+    for sub_idx, sub in enumerate(subjects_bold):
+        fmri_img_dict[sub] = config['input_path']['bold_volume'].format(subject=sub, task=config['task'], run = bold_sub_run[sub])
+
+else:
+    for sub_idx, sub in enumerate(subjects_bold):
+        fmri_img_dict[sub] = config['input_path']['bold_volume'].format(subject=sub, task=config['task'])
 
 # obtaining subject list corresponding to available bold images
-sub_idx = [ next(iter([item.replace('sub-','') for item in bold_name.filename.split('_') if 'sub' in item])) for bold_name in bold_images]
+# sub_idx = [ next(iter([item.replace('sub-','') for item in bold_name.filename.split('_') if 'sub' in item])) for bold_name in bold_images]
 
 # joining subject list and bold image list to get subject dictionary with adjacent scans
-df = pd.DataFrame([dict(zip(sub_idx,[img.path for img in bold_images]))])
-fmri_img_list = df.transpose().to_dict()[0]
+# df = pd.DataFrame([dict(zip(sub_idx,[img.path for img in bold_images]))])
+# fmri_img_dict = df.transpose().to_dict()[0]
 
 #checks hippunfold and grabs only subjects with output that exisits
 hippunfold_dir = config['hippunfold_dir']
 hippunfold_dir = join(hippunfold_dir,'results') if 'results' not in hippunfold_dir else hippunfold_dir
 
 hippunfold_subjects = [ subj_dir.strip('sub-') for subj_dir in os.listdir(hippunfold_dir) if 'sub' in subj_dir ]
-hippunfold_paths = [glob(join(hippunfold_dir, 'sub-{subject}/surf_*/sub-{subject}_hemi-*_space-*_den-{density}_midthickness.surf.gii'.format(subject = subj, density=config['density']))) for subj in hippunfold_subjects]
+hippunfold_paths = [glob(join(hippunfold_dir, 'sub-{subject}/surf_T1w/sub-{subject}_hemi-*_space-T1w_den-{density}_midthickness.surf.gii'.format(subject = subj, density=config['density'])))[0].replace('hemi-L','hemi-{hemi}').replace('hemi-R','hemi-{hemi}') for subj in hippunfold_subjects]
+
 
 # initializing list of indicies and paths
 hippunfold_input_list = [[], []]
 
-for idx, path_list in enumerate(hippunfold_paths):
-    if path_list != []:
-        hippunfold_input_list[0].append(idx), hippunfold_input_list[1].append(path_list)
+for idx, hippopath in enumerate(hippunfold_paths):
+    if hippopath != None:
+        hippunfold_input_list[0].append(idx), hippunfold_input_list[1].append(hippopath)
     else:
         continue
 
@@ -78,21 +146,24 @@ getter = itemgetter(*hippunfold_input_list[0])
 hippunfold_subjects = getter(hippunfold_subjects)
 hippunfold_subj_set = set(hippunfold_subjects)
 
-def filter_hippunfold_list(path_list):
-    new_list = []
-    for item in path_list:
-        if 'unfolded' in item:
-            continue
-        else:
-            item = item.replace('hemi-L','hemi-{hemi}')
-            item = item.replace('hemi-R','hemi-{hemi}')
-            new_list.append(item)
-    return list(set(new_list))[0]
+# def filter_hippunfold_list(path_list):
+#     new_list = []
 
-hippunfold_surf_list = dict(zip(hippunfold_subjects , list(map(filter_hippunfold_list, hippunfold_input_list[1]))))
+#     for item in path_list:
+#         print(item)
+#         if 'space-T1w' in item:
+#             item = item.replace('hemi-L','hemi-{hemi}')
+#             item = item.replace('hemi-R','hemi-{hemi}')
+#             new_list.append(item)
+#             break
+#         else:
+#             continue
+#     return list(set(new_list))[0]
+
+hippunfold_surf_list = dict(zip(hippunfold_subjects , hippunfold_input_list[1]))
 
 # getting available subject list and fixing available subjects to pybids input lists
-subjects = list(fmri_img_list.keys())
+subjects = list(fmri_img_dict.keys())
 
 # using sets to obtain subjects with existing transforms and bold images
 transform_subj_set = set(transform_input_list['subject'])

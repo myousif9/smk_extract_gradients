@@ -23,20 +23,20 @@ targets_by_analysis_level:
 
 pybids_inputs:
   reverse_transform:
-      filters:
-        suffix: 'xfm'
-        extension: '.h5'
-        datatype: 'anat'
-        scope: 'derivatives'
-        from: 'MNI152NLin2009cAsym'
-        to: 'T1w'
-        invalid_filters: 'allow'
-      wildcards:
-        - subject
-        - session
-        - acquisition
-        - task
-        - run
+    filters:
+      suffix: 'xfm'
+      extension: '.h5'
+      datatype: 'anat'
+      scope: 'derivatives'
+      from: 'MNI152NLin2009cAsym'
+      to: 'T1w'
+      invalid_filters: 'allow'
+    wildcards:
+      - subject
+      - session
+      - acquisition
+      - task
+      - run
 
   bold_volume:
     filters:
@@ -45,7 +45,6 @@ pybids_inputs:
       datatype: 'func'
       scope: 'derivatives'
       space: 'MNI152NLin2009cAsym'
-      desc: 'preproc'
       invalid_filters: 'allow'
     wildcards:
         - subject
@@ -53,6 +52,19 @@ pybids_inputs:
         - acquisition
         - task
         - run
+        
+  # surf:
+  #   filters:
+  #     suffix: 'midthickness'
+  #     extension: '.surf.gii'
+  #     space: 'T1w'
+  #     scope: 'derivatives'
+  #   wildcards:
+  #     - subject
+  #     - session
+  #     - acquisition
+  #     - hemi
+  #     - den
 
 #configuration for the command-line parameters to make available
 # passed on the argparse add_argument()
@@ -101,6 +113,16 @@ parse_args:
     help: The directory with completed hippunfold output.
     required: True
 
+  # --hippunfold_space:
+  #   help: Image space used for hippunfold.
+  #   default: T2w
+  #   choices:
+  #     - T1w
+  #     - T2w
+  #     - hippb500
+  #     - dwi
+  #   required: True
+
   --fmri_clean_dir:
     help: Cleaned fmri data directory.
     required: False
@@ -135,11 +157,10 @@ parse_args:
     nargs: '+'
     required: False
 
-  #refernce gradient flag
   --reference_gradient:
     help: Passing reference gradient for allignment of subject gradients
     required: False
-
+  
 
 #--- workflow specific configuration -- below is just an example:
 

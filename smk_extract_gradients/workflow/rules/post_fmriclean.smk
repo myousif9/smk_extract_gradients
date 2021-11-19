@@ -106,7 +106,7 @@ rule calculate_average_gradients:
 rule calculate_aligned_gradients:
     input:
         affinity_matrix = rules.calculate_affinity_matrix.output.affinity_matrix,
-        avg_affinity_matrix = rules.calculate_average_gradients.output.affinity_matrix,
+        avg_affinity_matrix =  rules.calculate_average_gradients.output.affinity_matrix if config['reference_gradient'] == None else config['reference_gradient'],
     output:
         gradient_maps = bids(
             root = "results",
