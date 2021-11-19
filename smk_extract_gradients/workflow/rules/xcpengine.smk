@@ -70,7 +70,7 @@ rule clean_fmri_reorganize:
             datatype = 'func',
             task =  '{task}',
             desc =  'cleaned',
-            suffix =  'bold.surf.gii',
+            suffix =  'bold.func.gii',
             **subj_wildcards
             ),
     group: 'subj'
