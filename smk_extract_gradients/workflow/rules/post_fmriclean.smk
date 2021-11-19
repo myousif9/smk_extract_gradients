@@ -15,7 +15,7 @@ rule map_rfmri_hippunfold_surface:
             **subj_wildcards
             )
     container: config['singularity']['autotop']
-    group: 'postfmriclean_subj'
+    group: 'subj'
     threads: 8
     resources:
         mem_mb = 16000,
@@ -58,7 +58,7 @@ rule calculate_affinity_matrix:
     resources:
         mem_mb = 16000,
         time = 30
-    group: 'postfmriclean_subj'
+    group: 'subj'
     log: bids(root = 'logs',**subj_wildcards, task = '{task}', hemi = '{hemi}', den = '{density}', suffix = 'calculate-affinity-matrix.txt')
     script: '../scripts/calculate_affinity_matrix.py'
 

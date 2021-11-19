@@ -67,8 +67,8 @@ def fmri_path_cohort(cohort_path):
 
     root = '/'.join(path)
     file_prefix = '_'.join(path)  
-    file_vol =  file_prefix + '_residualized.nii.gz'
-    file_surf =  file_prefix + '_residualized_space-fsLR_den-91k_bold.dtseries.nii'
+    file_vol =  file_prefix + '_residualised.nii.gz'
+    file_surf =  file_prefix + '_residualised_space-fsLR_den-91k_bold.dtseries.nii'
     return os.path.join(root, 'regress', file_vol), os.path.join(root, 'regress', file_surf)
 
 # def get_fmriprep_dir(fmri_path):

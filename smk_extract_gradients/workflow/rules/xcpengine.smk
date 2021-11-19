@@ -14,7 +14,7 @@ rule gen_cohort:
             task = '{task}',
             suffix = 'cohort.csv',
             **subj_wildcards)
-    group: 'xcpengine_subj'
+    group: 'subj'
     log: bids(root = 'logs',**subj_wildcards, task = '{task}', suffix = 'gen_cohort.txt')
     script:
         '../scripts/gen_cohort.py'
@@ -36,10 +36,10 @@ rule run_xcpengine:
             suffix = "fmriclean.done",
             **subj_wildcards),
     container: config['singularity']['xcpengine']
-    group: 'xcpengine_subj'
+    group: 'subj'
     resources:
         mem_mb = 32000,
-        time = 600
+        time = 1440
     log: bids(root = 'logs',**subj_wildcards, task = '{task}', suffix = 'fmri_cleaning.txt')
     shell:
         """
@@ -49,14 +49,12 @@ rule run_xcpengine:
 
 rule clean_fmri_reorganize:
     input:
-        xcp_done = expand(bids(
+        xcp_done = bids(
             root = "work",
             datatype = "func",
-            task = '{{task}}',
+            task = '{task}',
             suffix = "fmriclean.done",
             **subj_wildcards),
-            subject = subjects,
-            ),
         cohort = rules.gen_cohort.output.cohort
     output:
         fmri_volume =  bids(
@@ -75,11 +73,11 @@ rule clean_fmri_reorganize:
             suffix =  'bold.surf.gii',
             **subj_wildcards
             ),
-    group: 'xcpengine_group'
+    group: 'subj'
     log: bids(root = 'logs',**subj_wildcards, task = '{task}', suffix = 'clean_fmri_reorganize.txt')
     run:
-        cohort_path = fmri_path_cohort({input.cohort})
+        cohort_path = fmri_path_cohort(input.cohort)
         fmri_volume_path = join('results/xcpengine/', cohort_path[0])
         fmri_surf_path = join('results/xcpengine/', cohort_path[1])
-        shutil.copyfile(fmri_volume_path, {output.fmri_volume})
-        shutil.copyfile(fmri_surf_path, {output.fmri_surf})
+        shutil.copyfile(fmri_volume_path, output.fmri_volume)
+        shutil.copyfile(fmri_surf_path, output.fmri_surf)

@@ -12,7 +12,7 @@ rule correct_nan_vertices:
             suffix = "midthickness.surf.gii",
             **subj_wildcards
         ),
-    group: 'struct_subj'
+    group: 'subj'
     log: bids(root = 'logs',**subj_wildcards,  hemi = '{hemi}', den = '{density}', suffix = 'correct_nan_verticies.txt')
     script: '../scripts/fix_nan_vertices.py'
 
@@ -30,7 +30,7 @@ rule gifti2csv:
             suffix = "midthickness.surfpoints.csv",
             **subj_wildcards
         ),
-    group: 'struct_subj'
+    group: 'subj'
     log: bids(root = 'logs',**subj_wildcards, hemi = '{hemi}', den = '{density}', suffix = 'gifti2csv.txt')
     run:
         gifti2csv(input.surf,output.surf)
@@ -51,7 +51,7 @@ rule apply_transform:
             **subj_wildcards
         ),
     container: config['singularity']['ants']
-    group: 'struct_subj'
+    group: 'subj'
     log: bids(root = 'logs',**subj_wildcards, hemi = '{hemi}', den = '{density}', suffix = 'apply_transform.txt')
     shell:
         """ 
@@ -73,7 +73,7 @@ rule csv2gifti:
             suffix = "midthickness.surf.gii",
             **subj_wildcards
         ),
-    group: 'struct_subj'
+    group: 'subj'
     log: bids(root = 'logs',**subj_wildcards, hemi = '{hemi}', den = '{density}', suffix = 'csv2gifti.txt')
     run:
         csv2gifti(input.surf_csv, input.surf_gii, output.surf)
@@ -93,7 +93,7 @@ rule set_surf_structure:
             **subj_wildcards
         ),
     container: config['singularity']['autotop']
-    group: 'struct_subj'
+    group: 'subj'
     log: bids(root = 'logs',**subj_wildcards, hemi = '{hemi}', den = '{density}', suffix = 'set_surf_structure.txt')
     shell: 
         """
