@@ -23,7 +23,7 @@ rule run_xcpengine:
     input:
         rfmri = lambda wildcards: fmri_img_dict[wildcards.subject],
         cohort = rules.gen_cohort.output.cohort,
-        pipeline_design = os.path.join(config['snakemake_dir'], config['fmri_cleaning_design']['36p']) # need to make this more modular depending on cleaning design chosen
+        pipeline_design = join(config['snakemake_dir'], config['fmri_cleaning_design'][config['design']]) 
     params:
         fmriprep_dir = get_fmriprep_dir(config['input_path']['bold_volume']) if config['fmriprep_dir'] == None else config['fmriprep_dir'],
         work_dir = "work/xcpengine/",
@@ -69,8 +69,10 @@ rule clean_fmri_reorganize:
             root = 'results',
             datatype = 'func',
             task =  '{task}',
+            space = 'fsLR',
+            den = '91k',
             desc =  'cleaned',
-            suffix =  'bold.func.gii',
+            suffix =  'bold.dtseries.nii',
             **subj_wildcards
             ),
     group: 'subj'

@@ -140,6 +140,31 @@ parse_args:
     nargs: '+' 
     required: False
 
+  --design:
+    help:
+    default: fc-36p
+    choices:
+      - anat-antsct
+      - anat-complete
+      - anat_jlf_complete
+      - anat-minimal
+      - basil
+      - cbf_all
+      - cbf
+      - cbf_scorescrub
+      - fc-24p
+      - fc-24p_gsr
+      - fc-36p_despike
+      - fc-36p
+      - fc-36_scrub
+      - fc-36p_spkreg
+      - fc-acompcor
+      - fc-aroma
+      - fc-tcompcor
+      - task
+    nargs: '+'
+    required: False
+
   --hemi:
     help: Define the hemispheres of the hippocampus to run this pipeline with.
     default:
@@ -172,9 +197,27 @@ n_gradients: 10
 #     xcpengine: 'docker://pennbbl/xcpengine:1.2.4'
 
 singularity:
-    ants: '/scratch/myousif9/containers/ants_2.3.4.sif'
-    autotop: '/scratch/myousif9/containers/autotop_deps_nighres.sif'
-    xcpengine: '/project/ctb-akhanf/rhaast/01_Software/singularity/pennbbl_xcpengine_latest.sif'
+  ants: '/scratch/myousif9/containers/ants_2.3.4.sif'
+  autotop: '/scratch/myousif9/containers/autotop_deps_nighres.sif'
+  xcpengine: '/project/ctb-akhanf/rhaast/01_Software/singularity/pennbbl_xcpengine_latest.sif'
 
 fmri_cleaning_design:
-  36p: resources/fc-36p.dsn
+  anat-antsct: resources/design/anat-antsct.dsn
+  anat-complete: resources/design/anat-complete.dsn
+  anat_jlf_complete: resources/design/anat_jlf_complete.dsn
+  anat-minimal: resources/design/anat-minimal.dsn
+  basil: resources/design/basil.dsn
+  cbf_all: resources/design/cbf_all.dsn
+  cbf_basil: resources/design/cbf_basil.dsn
+  cbf: resources/design/cbf.dsn
+  cbf_scorescrub: resources/design/cbf_scorescrub.dsn
+  fc-24p: resources/design/fc-24p.dsn
+  fc-24p_gsr: resources/design/fc-24_gsr.dsn
+  fc-36p_despike: resources/design/fc-36p_despike.dsn
+  fc-36p: resources/design/fc-36p.dsn
+  fc-36_scrub: resources/design/fc-36_scrub.dsn
+  fc-36p_spkreg: resources/design/fc-36p_spkreg.dsn
+  fc-acompcor: resources/design/fc-acompcor.dsn
+  fc-aroma: resources/design/fc-aroma.dsn
+  fc-tcompcor: resources/design/fc-tcompcor.dsn
+  task: resources/design/task.dsn

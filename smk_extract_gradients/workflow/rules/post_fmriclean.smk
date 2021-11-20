@@ -98,7 +98,6 @@ rule calculate_average_gradients:
             ),
     params:
         n_gradients = config['n_gradients']
-
     group: 'calc_gradients'
     log: bids(root = 'logs', sub = 'avg', task = '{task}', hemi = '{hemi}', den = '{density}', suffix = 'calculate-average-gradients.txt')
     script: '../scripts/calculate_average_gradients.py'
