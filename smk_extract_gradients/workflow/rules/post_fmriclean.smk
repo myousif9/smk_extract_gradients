@@ -62,6 +62,29 @@ rule calculate_affinity_matrix:
     log: bids(root = 'logs',**subj_wildcards, task = '{task}', hemi = '{hemi}', den = '{density}', suffix = 'calculate-affinity-matrix.txt')
     script: '../scripts/calculate_affinity_matrix.py'
 
+# compile affinity matrices that exist and 
+
+# affinity_path =bids(
+#     root = "results",
+#     datatype = "func",
+#     task = '{task}',
+#     hemi = "{hemi}",
+#     space = "MNI152NLin2009cAsym",
+#     den = "{density}",
+#     suffix = "affinitymatrix.npy",
+#     **subj_wildcards)
+
+# affinity_mat_subjects = {}
+
+# for idx, subj in enumerate(fmri_input_list['subject']):
+#     for hemi in config['hemi']:
+#         if os.path.exists(affinity_path.format(subject=subj, task=config['task'],hemi=hemi, density=config['density'])):
+#             affinity_exist_subjects.add(subj)
+#         else:
+#             affinity_exist_subjects.discard(subj)
+
+# affinity_mat_subjects = list(affinity_mat_subjects)
+            
 rule calculate_average_gradients:
     input:
         affinity_matrix = expand(bids(

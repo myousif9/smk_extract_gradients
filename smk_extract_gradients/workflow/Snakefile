@@ -77,8 +77,12 @@ bold_zip = config['input_zip_lists']['bold_volume']
 subjects_bold = bold_zip['subject']
 task_bold = bold_zip['task']
 
+subj_list2set = lambda subj_list: set(subj_list) if len(subj_list)>1 else {subj_list[0]}
+
 bold_sub_task_getter = itemgetter(*[ idx for idx, task in enumerate(task_bold) if config['task'] == task])
 subjects_bold = bold_sub_task_getter(subjects_bold)
+subjects_bold = [subjects_bold] if type(subjects_bold) == str else subjects_bold 
+subjects_bold = list(subj_list2set(subjects_bold))
 
 def match_getter(match, match_list, item_list):
     idx_list  = [ idx for idx, item in enumerate(match_list) if match == item ]
@@ -94,7 +98,7 @@ if 'run' in bold_zip.keys():
     # {sub:int(match_getter(sub,subjects_bold,runs)[np.argmax(np.array(match_getter(sub,subjects_bold,runs)).astype(np.int8))])} 
     bold_run_dict_list = []
 
-    for sub_bold in list(set(subjects_bold)):
+    for sub_bold in subjects_bold:
         run_match = match_getter(sub_bold,subjects_bold,runs_bold)
         run_match_array = np.array(run_match).astype(np.int8)
 
@@ -130,8 +134,8 @@ hippunfold_dir = config['hippunfold_dir']
 hippunfold_dir = join(hippunfold_dir,'results') if 'results' not in hippunfold_dir else hippunfold_dir
 
 hippunfold_subjects = [ subj_dir.strip('sub-') for subj_dir in os.listdir(hippunfold_dir) if 'sub' in subj_dir ]
-hippunfold_paths = [glob(join(hippunfold_dir, f"sub-{subj}/surf_T1w/sub-{subj}_hemi-*_space-T1w_den-{config['density']}_midthickness.surf.gii"))[0].replace('hemi-L','hemi-{hemi}').replace('hemi-R','hemi-{hemi}') for subj in hippunfold_subjects]
 
+hippunfold_paths = [glob(join(hippunfold_dir, "sub-{subject}/surf_T1w/sub-{subject}_hemi-*_space-T1w_den-{density}_midthickness.surf.gii".format(subject=subj, density=config['density'])))[0].replace('hemi-L','hemi-{hemi}').replace('hemi-R','hemi-{hemi}') for subj in hippunfold_subjects]
 
 # initializing list of indicies and paths
 hippunfold_input_list = [[], []]
@@ -142,6 +146,7 @@ for idx, hippopath in enumerate(hippunfold_paths):
     else:
         continue
 
+
 getter = itemgetter(*hippunfold_input_list[0])
 hippunfold_subjects = getter(hippunfold_subjects)
 hippunfold_subj_set = set(hippunfold_subjects)
@@ -150,7 +155,7 @@ hippunfold_subj_set = set(hippunfold_subjects)
 #     new_list = []
 
 #     for item in path_list:
-#         print(item)
+#         
 #         if 'space-T1w' in item:
 #             item = item.replace('hemi-L','hemi-{hemi}')
 #             item = item.replace('hemi-R','hemi-{hemi}')
@@ -166,9 +171,9 @@ hippunfold_surf_list = dict(zip(hippunfold_subjects , hippunfold_input_list[1]))
 subjects = list(fmri_img_dict.keys())
 
 # using sets to obtain subjects with existing transforms and bold images
-transform_subj_set = set(transform_input_list['subject'])
-subj_set = set(subjects)
-fmri_subj_set = set(fmri_input_list['subject'])
+transform_subj_set = subj_list2set(transform_input_list['subject'])
+subj_set = subj_list2set(subjects)
+fmri_subj_set = subj_list2set(fmri_input_list['subject'])
 
 subjects = transform_subj_set.intersection(subj_set)
 subjects = subjects.intersection(fmri_subj_set)

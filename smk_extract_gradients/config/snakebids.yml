@@ -162,7 +162,6 @@ parse_args:
       - fc-aroma
       - fc-tcompcor
       - task
-    nargs: '+'
     required: False
 
   --hemi:
