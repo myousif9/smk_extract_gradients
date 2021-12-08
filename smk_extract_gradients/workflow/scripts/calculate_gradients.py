@@ -53,7 +53,7 @@ nib.save(gii, snakemake.output.avg_gradient_maps)
 # Calculate each subject gradient
 for s in range(0,n_subjects):
     gp = GradientMaps(n_components=snakemake.params.n_gradients, kernel='cosine', alignment='procrustes', random_state=0)
-    gp.fit(correlation_matrix[:,:,s}, reference=gm.gradients_, diffusion_time=0)
+    gp.fit(correlation_matrix[:,:,s], reference=gm.gradients_, diffusion_time=0)
 
     # Save aligned gradients to gifti file
     gii = nib.gifti.GiftiImage()
