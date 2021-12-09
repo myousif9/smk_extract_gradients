@@ -20,7 +20,6 @@ rule map_rfmri_hippunfold_surface:
     resources:
         mem_mb = 16000,
         time = 60    
-    log: bids(root = 'logs',**subj_wildcards, task = '{task}', hemi = '{hemi}', den = '{density}', suffix = 'map-rfmri-hippunfold-surface.txt')
     shell:
         """
         wb_command -volume-to-surface-mapping {input.fmri} {input.surf} {output.rfmri} -trilinear
@@ -59,7 +58,6 @@ rule calculate_affinity_matrix:
         mem_mb = 16000,
         time = 30
     group: 'subj'
-    log: bids(root = 'logs',**subj_wildcards, task = '{task}', hemi = '{hemi}', den = '{density}', suffix = 'calculate-affinity-matrix.txt')
     script: '../scripts/calculate_affinity_matrix.py'
 
             
@@ -74,13 +72,13 @@ rule calculate_gradients:
             den = "{{density}}",
             suffix = "correlationmatrix.npy",
             **subj_wildcards),
-            subject = fmri_input_list['subject']
+            subject = subjects
             ),
     output:
         avg_gradient_maps = bids(
             root = "results",
             datatype = "group",
-            prefix = 'sub_avg',
+            prefix = 'sub-avg',
             task = '{task}',
             hemi = "{hemi}",
             space = "MNI152NLin2009cAsym",
@@ -90,39 +88,40 @@ rule calculate_gradients:
         avg_correlation_matrix = bids(
             root = "results",
             datatype = "group",
-            prefix = "sub_avg",
+            prefix = "sub-avg",
             task = '{task}',
             hemi = "{hemi}",
             space = "MNI152NLin2009cAsym",
             den = "{density}",
             suffix = "correlationmatrix.npy"
             ),
-        gradient_maps = bids(
+        gradient_maps = expand(bids(
             root = "results",
             datatype = "func",
-            task = '{task}',
-            hemi = "{hemi}",
+            task = "{{task}}",
+            hemi = "{{hemi}}",
             space = "MNI152NLin2009cAsym",
-            den = "{density}",
+            den = "{{density}}",
             desc = "aligned",
             suffix = "gradients.func.gii",
-            **subj_wildcards
+            **subj_wildcards),
+            subject = subjects
             ),
-        gradient_unaligned = bids(
+        gradient_unaligned = expand(bids(
             root = "results",
             datatype = "func",
-            task =  '{task}',
-            hemi = "{hemi}",
+            task =  "{{task}}",
+            hemi = "{{hemi}}",
             space = "MNI152NLin2009cAsym",
-            den = "{density}",
+            den = "{{density}}",
             desc = "unaligned",
             suffix = "gradients.func.gii",
-            **subj_wildcards
-            ),
+            **subj_wildcards),
+            subject = subjects
+            )
     params:
         n_gradients = config['n_gradients']
     group: 'calc_gradients'
-    log: bids(root = 'logs', sub = 'avg', task = '{task}', hemi = '{hemi}', den = '{density}', suffix = 'calculate-average-gradients.txt')
     script: '../scripts/calculate_gradients.py'
 
 
@@ -143,7 +142,6 @@ rule set_func_structure:
             ),
     container: config['singularity']['autotop']
     group: 'calc_gradients'
-    log: bids(root = 'logs',**subj_wildcards, task = '{task}', hemi = '{hemi}', den = '{density}', suffix = 'set-func-structure.txt')
     shell: 
         """
         wb_command -set-structure {input.gradient_maps} {params.structure} -surface-type ANATOMICAL

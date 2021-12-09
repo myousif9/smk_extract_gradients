@@ -15,7 +15,6 @@ rule gen_cohort:
             suffix = 'cohort.csv',
             **subj_wildcards)
     group: 'subj'
-    log: bids(root = 'logs',**subj_wildcards, task = '{task}', suffix = 'gen_cohort.txt')
     script:
         '../scripts/gen_cohort.py'
 
@@ -76,7 +75,6 @@ rule clean_fmri_reorganize:
             **subj_wildcards
             ),
     group: 'subj'
-    log: bids(root = 'logs',**subj_wildcards, task = '{task}', suffix = 'clean_fmri_reorganize.txt')
     run:
         cohort_path = fmri_path_cohort(input.cohort)
         fmri_volume_path = join('results/xcpengine/', cohort_path[0])
