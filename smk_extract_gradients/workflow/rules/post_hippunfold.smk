@@ -13,7 +13,6 @@ rule correct_nan_vertices:
             **subj_wildcards
         ),
     group: 'subj'
-    log: bids(root = 'logs',**subj_wildcards,  hemi = '{hemi}', den = '{density}', suffix = 'correct_nan_verticies.txt')
     script: '../scripts/fix_nan_vertices.py'
 
 rule gifti2csv:
@@ -31,7 +30,6 @@ rule gifti2csv:
             **subj_wildcards
         ),
     group: 'subj'
-    log: bids(root = 'logs',**subj_wildcards, hemi = '{hemi}', den = '{density}', suffix = 'gifti2csv.txt')
     run:
         gifti2csv(input.surf,output.surf)
 
@@ -52,7 +50,6 @@ rule apply_transform:
         ),
     container: config['singularity']['ants']
     group: 'subj'
-    log: bids(root = 'logs',**subj_wildcards, hemi = '{hemi}', den = '{density}', suffix = 'apply_transform.txt')
     shell:
         """ 
         antsApplyTransformsToPoints -d 3 -i {input.surf} -o {output.surf} -t {input.rvr_transform}
@@ -74,7 +71,6 @@ rule csv2gifti:
             **subj_wildcards
         ),
     group: 'subj'
-    log: bids(root = 'logs',**subj_wildcards, hemi = '{hemi}', den = '{density}', suffix = 'csv2gifti.txt')
     run:
         csv2gifti(input.surf_csv, input.surf_gii, output.surf)
 
@@ -94,7 +90,6 @@ rule set_surf_structure:
         ),
     container: config['singularity']['autotop']
     group: 'subj'
-    log: bids(root = 'logs',**subj_wildcards, hemi = '{hemi}', den = '{density}', suffix = 'set_surf_structure.txt')
     shell: 
         """
         wb_command -set-structure {input.surf} {params.structure} -surface-type ANATOMICAL
