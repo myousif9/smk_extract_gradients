@@ -41,7 +41,9 @@ def generate_correlation_map(x, y):
     cov = np.dot(x,
                  y.T) - n * np.dot(mu_x[:, np.newaxis],
                                   mu_y[np.newaxis, :])
-    return cov / np.dot(s_x[:, np.newaxis], s_y[np.newaxis, :])
+    correlation_matrix =  cov / np.dot(s_x[:, np.newaxis], s_y[np.newaxis, :])
+    correlation_matrix = np.nan_to_num(correlation_matrix)
+    return correlation_matrix
 
 
 def compute_affinity_matrix(subject, hemi, density, rfmri_hipp_file, rfmri_ctx_file, affinity_matrix_output,correlation_matrix_output):
@@ -58,7 +60,6 @@ def compute_affinity_matrix(subject, hemi, density, rfmri_hipp_file, rfmri_ctx_f
   print(rfmri_ctx_data_rest.shape)
 
   correlation_matrix = generate_correlation_map(rfmri_hipp_data_rest,rfmri_ctx_data_rest)
-  correlation_matrix = np.nan_to_num(correlation_matrix)
 
   # Save to npy file
   np.save(correlation_matrix_output, correlation_matrix)
