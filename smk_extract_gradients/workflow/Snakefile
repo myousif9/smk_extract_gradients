@@ -119,19 +119,19 @@ else:
         fmri_img_dict[sub] = config['input_path']['bold_volume'].format(subject=sub, task=config['task'])
 
 #checks hippunfold and grabs only subjects with output that exisits
-hippunfold_dir = config['hippunfold_dir']
-hippunfold_dir = join(hippunfold_dir,'results') if 'results' not in hippunfold_dir else hippunfold_dir
+hippunfold_dir = os.path.abspath(config['hippunfold_dir'])
+hippunfold_dir = join(hippunfold_dir,'results/') if 'results' not in hippunfold_dir else hippunfold_dir
 
 hippunfold_subjects = [ subj_dir.strip('sub-') for subj_dir in os.listdir(hippunfold_dir) if 'sub' in subj_dir ]
 
-hippunfold_paths = [glob(join(hippunfold_dir, "sub-{subject}/surf_T1w/sub-{subject}_hemi-*_space-T1w_den-{density}_midthickness.surf.gii".format(subject=subj, density=config['density'])))[0].replace('hemi-L','hemi-{hemi}').replace('hemi-R','hemi-{hemi}') for subj in hippunfold_subjects]
+hippunfold_paths = [glob(join(hippunfold_dir,"sub-{subject}/surf_T1w/sub-{subject}_hemi-*_space-T1w_den-{density}_midthickness.surf.gii".format(subject=subj, density=config['density']))) for subj in hippunfold_subjects]
 
 # initializing list of indicies and paths
 hippunfold_input_list = [[], []]
 
 for idx, hippopath in enumerate(hippunfold_paths):
     if hippopath != None:
-        hippunfold_input_list[0].append(idx), hippunfold_input_list[1].append(hippopath)
+        hippunfold_input_list[0].append(idx), hippunfold_input_list[1].append(hippopath[0].replace('hemi-L','hemi-{hemi}').replace('hemi-R','hemi-{hemi}'))
     else:
         continue
 

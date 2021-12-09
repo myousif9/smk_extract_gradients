@@ -4,6 +4,7 @@ import numpy as np
 
 from brainspace.gradient import GradientMaps
 
+
 # Get number of subjects
 n_subjects = len(snakemake.input.correlation_matrix)
 
@@ -22,7 +23,7 @@ correlation_matrix_concat = np.zeros((
 
 # Fill empty matrix using subjects' correlation matrices
 for s in range(0,n_subjects):
-    correlation_matrix_concat[:,:,s] = np.load(snakemake.input.correlation_matrix[s])
+    correlation_matrix_concat[:,:,s] = np.nan_to_num(np.load(snakemake.input.correlation_matrix[s]))
 
 # Average correlation matrices
 correlation_matrix_avg = np.mean(correlation_matrix_concat,2)
@@ -32,7 +33,7 @@ np.save(snakemake.output.avg_correlation_matrix, correlation_matrix_avg)
 
 # Calculate average gradients
 gm = GradientMaps(n_components=snakemake.params.n_gradients, kernel='cosine', random_state=0)
-gm.fit(correlation_matrix_avg, diffusion_time=0)
+gm.fit(correlation_matrix_avg, diffusion_time=0,sparsity=0)
 
 # Save gradients to gifti file
 gii = nib.gifti.GiftiImage()
@@ -50,10 +51,16 @@ for g in range(0,len(gm.gradients_.T)):
 
 nib.save(gii, snakemake.output.avg_gradient_maps)
 
-# Calculate each subject gradient
+print(gm.gradients_)
+print(correlation_matrix_concat[:,:,1])
+print(correlation_matrix_avg)
+print(gm.gradients_.shape)
+print(correlation_matrix_concat.shape)
+print(correlation_matrix_avg.shape)
+
 for s in range(0,n_subjects):
     gp = GradientMaps(n_components=snakemake.params.n_gradients, kernel='cosine', alignment='procrustes', random_state=0)
-    gp.fit(correlation_matrix[:,:,s], reference=gm.gradients_, diffusion_time=0)
+    gp.fit(correlation_matrix_concat[:,:,s], reference=gm.gradients_, diffusion_time=0,sparsity=0)
 
     # Save aligned gradients to gifti file
     gii = nib.gifti.GiftiImage()
