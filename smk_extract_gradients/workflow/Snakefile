@@ -222,7 +222,7 @@ rule all:
             ),
         expand(bids(
             root = "work",
-            datatype = "func",
+            datatype = "group",
             prefix = "sub-avg",
             task =  '{task}',
             hemi = "{hemi}",

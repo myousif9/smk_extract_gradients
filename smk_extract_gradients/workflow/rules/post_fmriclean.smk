@@ -141,7 +141,7 @@ rule set_avgfunc_structure:
     output:
         check = bids(
             root = "work",
-            datatype = "func",
+            datatype = "group",
             prefix = "sub-avg",
             task =  "{task}",
             hemi = "{hemi}",
@@ -184,7 +184,7 @@ rule set_func_structure:
     output:
         check = bids(
             root = "work",
-            datatype = "group",
+            datatype = "func",
             task = "{task}",
             hemi = "{hemi}",
             den = "{density}",
