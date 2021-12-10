@@ -7,7 +7,7 @@ rule map_rfmri_hippunfold_surface:
         rfmri = bids(
             root = "results",
             datatype = "func",
-            task =  '{task}',
+            task = "{task}",
             hemi = "{hemi}",
             space = "MNI152NLin2009cAsym",
             den = "{density}",
@@ -36,7 +36,7 @@ rule calculate_affinity_matrix:
         correlation_matrix = bids(
             root = "results",
             datatype = "func",
-            task = '{task}',
+            task = "{task}",
             hemi = "{hemi}",
             space = "MNI152NLin2009cAsym",
             den = "{density}",
@@ -46,7 +46,7 @@ rule calculate_affinity_matrix:
         affinity_matrix = bids(
             root = "results",
             datatype = "func",
-            task = '{task}',
+            task = "{task}",
             hemi = "{hemi}",
             space = "MNI152NLin2009cAsym",
             den = "{density}",
@@ -63,23 +63,22 @@ rule calculate_affinity_matrix:
             
 rule calculate_gradients:
     input:
-        correlation_matrix = expand(bids(
+        affinity_matrix = expand(bids(
             root = "results",
             datatype = "func",
-            task = '{{task}}',
+            task = "{{task}}",
             hemi = "{{hemi}}",
             space = "MNI152NLin2009cAsym",
             den = "{{density}}",
-            suffix = "correlationmatrix.npy",
+            suffix = "affinitymatrix.npy",
             **subj_wildcards),
-            subject = subjects
-            ),
+            subject = subjects)
     output:
         avg_gradient_maps = bids(
             root = "results",
             datatype = "group",
-            prefix = 'sub-avg',
-            task = '{task}',
+            prefix = "sub-avg",
+            task = "{task}",
             hemi = "{hemi}",
             space = "MNI152NLin2009cAsym",
             den = "{density}",
@@ -89,7 +88,7 @@ rule calculate_gradients:
             root = "results",
             datatype = "group",
             prefix = "sub-avg",
-            task = '{task}',
+            task = "{task}",
             hemi = "{hemi}",
             space = "MNI152NLin2009cAsym",
             den = "{density}",
@@ -125,26 +124,78 @@ rule calculate_gradients:
     script: '../scripts/calculate_gradients.py'
 
 
-rule set_func_structure:
+rule set_avgfunc_structure:
     input:
-        gradient_maps = rules.calculate_gradients.output.gradient_maps,
+        avg_gradient_maps = bids(
+            root = "results",
+            datatype = "group",
+            prefix = "sub-avg",
+            task = "{task}",
+            hemi = "{hemi}",
+            space = "MNI152NLin2009cAsym",
+            den = "{density}",
+            suffix = "gradients.func.gii"
+            ),
     params:
         structure = "CORTEX_LEFT" if "{hemi}" == "L" else "CORTEX_RIGHT"
     output:
         check = bids(
             root = "work",
             datatype = "func",
-            task =  '{task}',
+            prefix = "sub-avg",
+            task =  "{task}",
             hemi = "{hemi}",
             den = "{density}",
             suffix = "func.done",
-            **subj_wildcards
             ),
     container: config['singularity']['autotop']
     group: 'calc_gradients'
     shell: 
         """
+        wb_command -set-structure {input.avg_gradient_maps} {params.structure} -surface-type ANATOMICAL
+        touch {output.check}
+        """
+
+rule set_func_structure:
+    input:
+        gradient_maps = bids(
+            root = "results",
+            datatype = "func",
+            task = "{task}",
+            hemi = "{hemi}",
+            space = "MNI152NLin2009cAsym",
+            den = "{density}",
+            desc = "aligned",
+            suffix = "gradients.func.gii",
+            **subj_wildcards),
+        gradient_unaligned = bids(
+            root = "results",
+            datatype = "func",
+            task =  "{task}",
+            hemi = "{hemi}",
+            space = "MNI152NLin2009cAsym",
+            den = "{density}",
+            desc = "unaligned",
+            suffix = "gradients.func.gii",
+            **subj_wildcards),
+         
+    params:
+        structure = "CORTEX_LEFT" if "{hemi}" == "L" else "CORTEX_RIGHT"
+    output:
+        check = bids(
+            root = "work",
+            datatype = "group",
+            task = "{task}",
+            hemi = "{hemi}",
+            den = "{density}",
+            suffix = "func.done",
+            **subj_wildcards),
+    container: config['singularity']['autotop']
+    group: 'calc_gradients'
+    shell: 
+        """
         wb_command -set-structure {input.gradient_maps} {params.structure} -surface-type ANATOMICAL
+        wb_command -set-structure {input.gradient_unaligned} {params.structure} -surface-type ANATOMICAL
         touch {output.check}
         """
 

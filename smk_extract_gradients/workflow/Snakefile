@@ -220,6 +220,18 @@ rule all:
             hemi = config['hemi'],
             **transform_input_list
             ),
+        expand(bids(
+            root = "work",
+            datatype = "func",
+            prefix = "sub-avg",
+            task =  '{task}',
+            hemi = "{hemi}",
+            den = "{density}",
+            suffix = "func.done"),
+            task = config['task'], 
+            density=config['density'],
+            hemi = config['hemi'],
+            )
 
 include: 'rules/xcpengine.smk'
 
