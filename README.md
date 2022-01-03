@@ -1,4 +1,4 @@
-smk_extract_gradients
+Hippogradients
 ============
 
 Pipeline for extracting gradients from cleaned fmriprep output applied to hippunfold surfaces
