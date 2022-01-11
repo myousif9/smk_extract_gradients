@@ -45,6 +45,7 @@ pybids_inputs:
       datatype: 'func'
       scope: 'derivatives'
       space: 'MNI152NLin2009cAsym'
+      desc: 'preproc'
       invalid_filters: 'allow'
     wildcards:
         - subject
