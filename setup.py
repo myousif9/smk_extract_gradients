@@ -1,7 +1,7 @@
 import setuptools
 import json
 
-with open("README.rst", "r") as fh:
+with open("README.md", "r") as fh:
     long_description = fh.read()
 
 with open('smk_extract_gradients/pipeline_description.json', 'r') as fh:
